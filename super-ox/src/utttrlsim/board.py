@@ -325,12 +325,10 @@ class UltimateTicTacToeBoard:
         result = np.full((3, 3), Player.EMPTY.value, dtype=np.int8)
 
         for grid_x, grid_y in itertools.product(range(3), range(3)):
-
-            # Extract sub-board data using Position class
-            sub_board_data = np.full((3, 3), Player.EMPTY.value, dtype=np.int8)
-            for cell_x, cell_y in itertools.product(range(3), range(3)):
-                cell = Position(grid_x, grid_y, cell_x, cell_y)
-                sub_board_data[cell_y, cell_x] = self.board[cell.board_y, cell.board_x]
+            # Extract sub-board data using numpy slicing
+            start_y = grid_y * 3
+            start_x = grid_x * 3
+            sub_board_data = self.board[start_y:start_y + 3, start_x:start_x + 3]
 
             # Check if X won this sub-board
             if self._check_win_pattern_for_player(sub_board_data, Player.X):
@@ -344,12 +342,10 @@ class UltimateTicTacToeBoard:
 
     def _is_sub_board_full(self, grid_x: int, grid_y: int) -> bool:
         """Check if a sub-board is full."""
-
-        for cell_x, cell_y in itertools.product(range(3), range(3)):
-            cell = Position(grid_x, grid_y, cell_x, cell_y)
-            if self.board[cell.board_y, cell.board_x] == Player.EMPTY.value:
-                return False
-        return True
+        start_y = grid_y * 3
+        start_x = grid_x * 3
+        sub_board_data = self.board[start_y:start_y + 3, start_x:start_x + 3]
+        return not np.any(sub_board_data == Player.EMPTY.value)
 
     def _check_win_pattern_for_player(
         self, board_slice: np.ndarray, player: Player
