@@ -1,0 +1,394 @@
+"""
+Ultimate Tic-Tac-Toe Board Implementation
+
+Core game logic including board representation, legal move generation,
+and win condition checking.
+"""
+
+from enum import Enum
+from typing import List, Optional, Set, Tuple, Union
+import itertools
+
+import numpy as np
+
+
+class Player(Enum):
+    """Player enumeration"""
+
+    EMPTY = 0
+    X = 1
+    O = 2
+
+
+class Position:
+    """
+    Position class for Ultimate Tic-Tac-Toe board coordinates.
+
+    Supports two initialization methods:
+    - Position(global_id): 0-80 for global position
+    - Position(grid_x, grid_y, cell_x, cell_y): Grid and cell coordinates
+        - grid_x, grid_y: Sub-grid coordinates (0-2)
+        - cell_x, cell_y: Cell coordinates within sub-grid (0-2)
+    """
+
+    def __init__(self, *args):
+        """
+        Initialize position.
+
+        Args:
+            Either:
+            - board_id (int): Global position ID (0-80)
+            - grid_x, grid_y, cell_x, cell_y (int, int, int, int): Grid and cell coordinates
+                - grid_x, grid_y: Sub-grid coordinates (0-2)
+                - cell_x, cell_y: Cell coordinates within sub-grid (0-2)
+        """
+        if len(args) == 1:
+            # Initialize from global ID
+            board_id = args[0]
+            assert 0 <= board_id <= 80, f"Position ID must be 0-80, got {board_id}"
+            self._id = board_id
+        elif len(args) == 4:
+            # Initialize from grid and cell coordinates
+            grid_x, grid_y, cell_x, cell_y = args
+            assert 0 <= grid_x <= 2, f"Grid X coordinate must be 0-2, got {grid_x}"
+            assert 0 <= grid_y <= 2, f"Grid Y coordinate must be 0-2, got {grid_y}"
+            assert 0 <= cell_x <= 2, f"Cell X coordinate must be 0-2, got {cell_x}"
+            assert 0 <= cell_y <= 2, f"Cell Y coordinate must be 0-2, got {cell_y}"
+            self._id = (grid_x * 3 + cell_x) + (grid_y * 3 + cell_y) * 9
+        else:
+            raise ValueError(
+                "Position requires either 1 argument (global_id) or 4 arguments (grid_x, grid_y, cell_x, cell_y)"
+            )
+
+    @property
+    def board_id(self) -> int:
+        """Board position ID (0-80)."""
+        return self._id
+
+    @property
+    def board_x(self) -> int:
+        """Board X coordinate (0-8) - position in the 9x9 main board."""
+        return self._id % 9
+
+    @property
+    def board_y(self) -> int:
+        """Board Y coordinate (0-8) - position in the 9x9 main board."""
+        return self._id // 9
+
+    @property
+    def sub_grid_x(self) -> int:
+        """Sub-grid X coordinate (0-2) - which 3x3 sub-grid horizontally."""
+        return self.board_x // 3
+
+    @property
+    def sub_grid_y(self) -> int:
+        """Sub-grid Y coordinate (0-2) - which 3x3 sub-grid vertically."""
+        return self.board_y // 3
+
+    @property
+    def sub_grid_id(self) -> int:
+        """Sub-grid ID (0-8) - unique identifier for the 3x3 sub-grid."""
+        return self.sub_grid_x + self.sub_grid_y * 3
+
+    @property
+    def cell_x(self) -> int:
+        """Cell X coordinate within sub-grid (0-2) - position within the 3x3 sub-grid."""
+        return self.board_x % 3
+
+    @property
+    def cell_y(self) -> int:
+        """Cell Y coordinate within sub-grid (0-2) - position within the 3x3 sub-grid."""
+        return self.board_y % 3
+
+    @property
+    def cell_id(self) -> int:
+        """Cell ID within sub-grid (0-8)."""
+        return self.cell_x + self.cell_y * 3
+
+    def __eq__(self, other):
+        if isinstance(other, Position):
+            return self._id == other._id
+        return False
+
+    def __hash__(self):
+        return hash(self._id)
+
+    def __repr__(self):
+        return f"Position(board_id={self._id}, board=({self.board_x}, {self.board_y}), sub_grid=({self.sub_grid_x}, {self.sub_grid_y}), cell=({self.cell_x}, {self.cell_y}))"
+
+
+class UltimateTicTacToeBoard:
+    """
+    Ultimate Tic-Tac-Toe board implementation.
+
+    Board representation: 9x9 numpy array where:
+    - 0: Empty
+    - 1: Player X
+    - 2: Player O
+
+    Meta-board: 3x3 array tracking which sub-boards are won
+    """
+
+    def __init__(self):
+        """Initialize an empty Ultimate Tic-Tac-Toe board."""
+        # Main board: 9x9 grid
+        self.board: np.ndarray = np.full((9, 9), Player.EMPTY.value, dtype=np.int8)
+
+        # Current player (1 for X, 2 for O)
+        self.current_player: Player = Player.X
+
+        # Last move made (Position object)
+        self.last_move: Optional[Position] = None
+
+    def make_move(self, position: Position) -> bool:
+        """
+        Make a move on the board.
+
+        Args:
+            position: Position object representing the move
+
+        Returns:
+            True if move was successful, False otherwise
+        """
+        # Validate move
+        if self.game_over:
+            return False
+
+        legal_moves = self.get_legal_moves()
+        if position not in legal_moves:
+            return False
+
+        # Make the move
+        self.board[position.board_y, position.board_x] = self.current_player.value
+
+        # Update last move
+        self.last_move = position
+
+        # Switch players
+        self.current_player = Player.O if self.current_player == Player.X else Player.X
+
+        return True
+
+    def get_legal_moves(self) -> List[Position]:
+        """
+        Get all legal moves for the current player.
+
+        Returns:
+            List of Position objects representing legal moves.
+        """
+        legal_moves = set()
+
+        if self.last_move is None:
+            # First move: can play anywhere
+            # Assert that board is completely empty for first move
+            assert np.all(self.board == 0), "Board must be empty for first move"
+
+            # All 81 positions are legal for first move
+            for pos_id in range(81):
+                pos = Position(pos_id)
+                legal_moves.add(pos)
+        else:
+            # Subsequent moves: must play in the sub-board corresponding to last move's position
+            # last_move is now a Position object, so we can directly access its grid coordinates
+            # The next player must play in the grid corresponding to the cell position of the last move
+            target_sub_grid_x = self.last_move.sub_grid_x
+            target_sub_grid_y = self.last_move.sub_grid_y
+
+            # If target sub-board is won, can play anywhere
+            if self.subboard_winner[target_sub_grid_y, target_sub_grid_x] != Player.EMPTY.value:
+                for sub_grid_x, sub_grid_y in itertools.product(range(3), range(3)):
+                    if self.subboard_winner[sub_grid_y, sub_grid_x] != Player.EMPTY.value:
+                        continue
+
+                    for cell_id in range(9):
+                        cell = Position(
+                            sub_grid_x, sub_grid_y, cell_id % 3, cell_id // 3
+                        )
+                        if self.board[cell.board_y, cell.board_x] == Player.EMPTY.value:
+                            legal_moves.add(cell)
+            else:
+                # Must play in target sub-board
+                for cell_id in range(9):
+                    cell = Position(
+                        target_sub_grid_x, target_sub_grid_y, cell_id % 3, cell_id // 3
+                    )
+                    if self.board[cell.board_y, cell.board_x] == Player.EMPTY.value:
+                        legal_moves.add(cell)
+
+        return list(legal_moves)
+
+    def reset(self) -> None:
+        """Reset the board to initial state."""
+        self.board.fill(Player.EMPTY.value)
+        self.current_player = Player.X
+        self.last_move = None
+
+    def render(self) -> str:
+        """
+        Render the board as a string for display.
+
+        Returns:
+            String representation of the board
+        """
+        result = []
+
+        for meta_row in range(3):
+            for sub_row in range(3):
+                line = ""
+                for meta_col in range(3):
+                    for sub_col in range(3):
+                        pos = Position(meta_col, meta_row, sub_col, sub_row)
+                        cell = self.board[pos.board_y, pos.board_x]
+
+                        if cell == Player.EMPTY.value:
+                            line += "."
+                        elif cell == Player.X.value:
+                            line += "X"
+                        else:
+                            line += "O"
+
+                        if sub_col < 2:
+                            line += " "
+
+                    if meta_col < 2:
+                        line += " | "
+
+                result.append(line)
+
+            if meta_row < 2:
+                result.append("-" * 23)
+
+        return "\n".join(result)
+
+    def copy(self) -> "UltimateTicTacToeBoard":
+        """Create a deep copy of the board."""
+        new_board = UltimateTicTacToeBoard()
+        new_board.board = self.board.copy()
+        new_board.current_player = self.current_player
+        new_board.last_move = self.last_move  # Position objects are immutable
+        return new_board
+
+    def get_state(self) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Get current board state.
+
+        Returns:
+            Tuple of (main_board, meta_board)
+        """
+        return self.board.copy(), self.subboard_winner.copy()
+
+    @property
+    def game_over(self) -> bool:
+        """Check if the game is over."""
+        # If either player has a winning line on the meta‑board, the game is over
+        for player in (Player.X, Player.O):
+            if self._check_win_pattern_for_player(self.subboard_winner, player):
+                return True
+
+        # Check for draw (no empty and undecided sub‑board remains)
+        for i in range(3):
+            for j in range(3):
+                if self.subboard_winner[i, j] == Player.EMPTY.value and not self._is_sub_board_full(
+                    j, i
+                ):
+                    return False
+
+        # Draw
+        return True
+
+    @property
+    def winner(self) -> Player:
+        """Return the winner, or Player.EMPTY if draw / not finished."""
+        # If the game is not yet over there is no winner
+        if not self.game_over:
+            return Player.EMPTY
+
+        # Check which player (if any) owns a winning line on the meta‑board
+        for player in (Player.X, Player.O):
+            if self._check_win_pattern_for_player(self.subboard_winner, player):
+                return player
+
+        # No player has a winning line → draw
+        return Player.EMPTY
+
+    @property
+    def subboard_winner(self) -> np.ndarray:
+        """
+        Get the current sub-board winners.
+
+        Returns:
+            3x3 array where:
+            - Player.EMPTY.value: Sub-board not yet won
+            - Player.X.value: Player X won this sub-board
+            - Player.O.value: Player O won this sub-board
+        """
+        result = np.full((3, 3), Player.EMPTY.value, dtype=np.int8)
+
+        for grid_x, grid_y in itertools.product(range(3), range(3)):
+
+            # Extract sub-board data using Position class
+            sub_board_data = np.full((3, 3), Player.EMPTY.value, dtype=np.int8)
+            for cell_x, cell_y in itertools.product(range(3), range(3)):
+                cell = Position(grid_x, grid_y, cell_x, cell_y)
+                sub_board_data[cell_y, cell_x] = self.board[cell.board_y, cell.board_x]
+
+            # Check if X won this sub-board
+            if self._check_win_pattern_for_player(sub_board_data, Player.X):
+                result[grid_y, grid_x] = Player.X.value
+            # Check if O won this sub-board
+            elif self._check_win_pattern_for_player(sub_board_data, Player.O):
+                result[grid_y, grid_x] = Player.O.value
+            # Otherwise, sub-board is not yet won (result remains Player.EMPTY.value)
+
+        return result
+
+    def _is_sub_board_full(self, grid_x: int, grid_y: int) -> bool:
+        """Check if a sub-board is full."""
+
+        for cell_x, cell_y in itertools.product(range(3), range(3)):
+            cell = Position(grid_x, grid_y, cell_x, cell_y)
+            if self.board[cell.board_y, cell.board_x] == Player.EMPTY.value:
+                return False
+        return True
+
+    def _check_win_pattern_for_player(
+        self, board_slice: np.ndarray, player: Player
+    ) -> bool:
+        """Check if a specific player has a winning pattern on a 3x3 board slice."""
+        player_value = player.value
+
+        # Check rows
+        for row in range(3):
+            if np.all(board_slice[row, :] == player_value):
+                return True
+
+        # Check columns
+        for col in range(3):
+            if np.all(board_slice[:, col] == player_value):
+                return True
+
+        # Check diagonals
+        if np.all(np.diag(board_slice) == player_value):
+            return True
+        if np.all(np.diag(np.fliplr(board_slice)) == player_value):
+            return True
+
+        return False
+
+    def set_board_state(
+        self,
+        board_state: np.ndarray,
+        current_player: Player,
+        last_move: Position,
+    ) -> None:
+        """
+        Set the board state directly (for testing purposes).
+
+        Args:
+            board_state: 9x9 board state
+            current_player: Current player (optional)
+            last_move: Last move made as Position object (optional)
+        """
+        self.board = board_state.copy()
+        self.current_player = current_player
+        self.last_move = last_move
