@@ -25,15 +25,17 @@ class TestUltimateTicTacToeEnv:
 
     def test_reset(self):
         """Test environment reset"""
+        # Arrange
         env = UltimateTicTacToeEnv()
-
-        # Make some moves
+        # Make some moves to change the environment state
         env.step(40)  # sub_board 4, position 4
         env.step(0)  # sub_board 0, position 0
 
-        # Reset
+        # Act
+        # Reset the environment
         observation, info = env.reset()
 
+        # Assert
         # Check observation
         assert observation.shape == (9, 9)
         assert np.all(observation == 0)
@@ -54,14 +56,16 @@ class TestUltimateTicTacToeEnv:
 
     def test_step_valid_move(self):
         """Test making valid moves"""
+        # Arrange
         env = UltimateTicTacToeEnv()
-
         observation, info = env.reset()
-
-        # Make a valid move
         action = 40  # sub_board 4, position 4
+
+        # Act
+        # Make a valid move
         observation, reward, done, truncated, info = env.step(action)
 
+        # Assert
         # Check observation
         assert observation.shape == (9, 9)
         assert observation[4, 4] == 1  # X's move
@@ -80,16 +84,17 @@ class TestUltimateTicTacToeEnv:
 
     def test_step_invalid_move(self):
         """Test making invalid moves"""
+        # Arrange
         env = UltimateTicTacToeEnv()
-
         observation, info = env.reset()
-
-        # Make a move
+        # Make a move first
         env.step(40)
 
+        # Act
         # Try to make the same move again (invalid)
         observation, reward, done, truncated, info = env.step(40)
 
+        # Assert
         # Should be penalized and game should end
         assert reward == -100.0
         assert done
@@ -106,22 +111,27 @@ class TestUltimateTicTacToeEnv:
 
     def test_legal_actions(self):
         """Test legal actions mask"""
+        # Arrange
         env = UltimateTicTacToeEnv()
-
         observation, info = env.reset()
 
+        # Act
         legal_actions = env.get_legal_actions()
 
+        # Assert
         # Should have 81 actions, all legal at start
         assert legal_actions.shape == (81,)
         assert np.all(legal_actions)
 
+        # Arrange (second phase)
         # Make a move
         env.step(40)
 
+        # Act (second phase)
         # Get new legal actions
         legal_actions = env.get_legal_actions()
 
+        # Assert (second phase)
         # Should have 8 legal actions in sub-board 4 (the cell position of the last move)
         # The last move was at position 40, which corresponds to cell (1, 1) in sub-board 4
         # So the next player must play in sub-board 4 (which is at grid position (1, 1))
@@ -205,15 +215,17 @@ class TestUltimateTicTacToeEnv:
 
     def test_render_rgb_array(self):
         """Test RGB array rendering mode"""
+        # Arrange
         env = UltimateTicTacToeEnv(render_mode="rgb_array")
-
         observation, info = env.reset()
-
-        # Make a move
+        # Make a move to create a testable state
         env.step(40)
 
+        # Act
         # Render should return an image
         result = env.render()
+
+        # Assert
         assert result is not None
         assert result.shape == (300, 300, 3)
         assert result.dtype == np.uint8
