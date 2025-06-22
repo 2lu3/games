@@ -173,7 +173,7 @@ class UltimateTicTacToeEnv(gym.Env):
         Calculate reward for the current state.
 
         Returns:
-            Reward value
+            Reward value: +1 for win, 0 for draw, -1 for loss
         """
         if not self.board.game_over:
             return 0.0
@@ -181,11 +181,11 @@ class UltimateTicTacToeEnv(gym.Env):
         if self.board.winner == Player.EMPTY:
             # Draw
             return 0.0
-        elif self.board.winner == Player.X:
-            # X wins (assuming agent is X)
+        elif self.board.winner == self.board.current_player:
+            # Current player wins
             return 1.0
         else:
-            # O wins (assuming agent is O)
+            # Current player loses
             return -1.0
 
     def _render_rgb_array(self) -> np.ndarray:
