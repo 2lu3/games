@@ -59,7 +59,7 @@ def main():
     
     # --- コールバック設定 ---
     checkpoint_callback = CheckpointCallback(
-        save_freq=cfg["total_steps"] // 10,  # 10回チェックポイントを保存
+        save_freq=max(1, cfg["total_steps"] // 10),  # 最低1回はチェックポイントを保存
         save_path=os.path.dirname(cfg["model_path"]),
         name_prefix="uttt_rl_model"
     )
