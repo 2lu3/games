@@ -4,7 +4,7 @@ Ultimate Tic-Tac-Toe（UTTT）の強化学習環境を実装したPythonライ�
 
 ## Todo
 
-- [ ] テストデータ生成のヘルパー関数を抽出。長い board_state 構築ロジックが複数回登場。def fill_sub_board(board, grid_x, grid_y, pattern): ... のように共通化するとテスト本体が短くなる。
+- [x] テストデータ生成のヘルパー関数を抽出。長い board_state 構築ロジックが複数回登場。def fill_sub_board(board, grid_x, grid_y, pattern): ... のように共通化するとテスト本体が短くなる。
 - [ ] 境界値・ランダム生成テストの追加→Hypothesis などで “ランダム合法手を生成 → 差分整合性チェック” を入れると手動で書ききれないエッジケースも網羅できる
 - [ ] ネガティブテストをもう一歩深く。test_make_invalid_move は「同じマスを２回置く」だけ。他にも「ターゲット外のサブボードへ置く」「ゲーム終了後に置く」など異常系を網羅すると安心。
 
