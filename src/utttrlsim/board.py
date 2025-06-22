@@ -3,6 +3,16 @@ Ultimate Tic-Tac-Toe Board Implementation
 
 Core game logic including board representation, legal move generation,
 and win condition checking.
+
+Ultimate Tic-Tac-Toe Rules:
+1. The game is played on a 9x9 board divided into 9 3x3 sub-boards
+2. Players take turns placing X or O in empty cells
+3. The first player can place their mark anywhere
+4. Each subsequent move must be placed in the sub-board corresponding to the cell position of the opponent's last move
+5. If the target sub-board is full or already won, the player can choose any available sub-board
+6. To win a sub-board, a player must get 3 in a row (horizontally, vertically, or diagonally)
+7. To win the game, a player must win 3 sub-boards in a row (horizontally, vertically, or diagonally)
+8. If all sub-boards are full or won and no player has won 3 in a row, the game is a draw
 """
 
 from enum import Enum
@@ -13,7 +23,7 @@ import numpy as np
 
 
 class Player(Enum):
-    """Player enumeration"""
+    """Player enumeration for Ultimate Tic-Tac-Toe"""
 
     EMPTY = 0
     X = 1
@@ -126,7 +136,7 @@ class UltimateTicTacToeBoard:
     - 1: Player X
     - 2: Player O
 
-    Meta-board: 3x3 array tracking which sub-boards are won
+    The board is divided into 9 3x3 sub-boards, each identified by grid coordinates (0-2, 0-2).
     """
 
     def __init__(self):
@@ -173,6 +183,11 @@ class UltimateTicTacToeBoard:
         """
         Get all legal moves for the current player.
 
+        Ultimate Tic-Tac-Toe rules for legal moves:
+        1. First move: can play anywhere
+        2. Subsequent moves: must play in the sub-board corresponding to the cell position of the last move
+        3. If the target sub-board is full or already won, can play in any available sub-board
+
         Returns:
             List of Position objects representing legal moves.
         """
@@ -188,25 +203,17 @@ class UltimateTicTacToeBoard:
                 pos = Position(pos_id)
                 legal_moves.add(pos)
         else:
-            # Subsequent moves: must play in the sub-board corresponding to last move's position
-            # last_move is now a Position object, so we can directly access its grid coordinates
-            # The next player must play in the grid corresponding to the cell position of the last move
-            target_sub_grid_x = self.last_move.sub_grid_x
-            target_sub_grid_y = self.last_move.sub_grid_y
+            # Subsequent moves: must play in the sub-board corresponding to last move's cell position
+            target_sub_grid_x = self.last_move.cell_x
+            target_sub_grid_y = self.last_move.cell_y
 
-            # If target sub-board is won, can play anywhere
-            if self.subboard_winner[target_sub_grid_y, target_sub_grid_x] != Player.EMPTY.value:
-                for sub_grid_x, sub_grid_y in itertools.product(range(3), range(3)):
-                    if self.subboard_winner[sub_grid_y, sub_grid_x] != Player.EMPTY.value:
-                        continue
+            # Check if target sub-board is available (not won and not full)
+            target_sub_board_available = (
+                self.subboard_winner[target_sub_grid_y, target_sub_grid_x] == Player.EMPTY.value and
+                not self._is_sub_board_full(target_sub_grid_x, target_sub_grid_y)
+            )
 
-                    for cell_id in range(9):
-                        cell = Position(
-                            sub_grid_x, sub_grid_y, cell_id % 3, cell_id // 3
-                        )
-                        if self.board[cell.board_y, cell.board_x] == Player.EMPTY.value:
-                            legal_moves.add(cell)
-            else:
+            if target_sub_board_available:
                 # Must play in target sub-board
                 for cell_id in range(9):
                     cell = Position(
@@ -214,6 +221,21 @@ class UltimateTicTacToeBoard:
                     )
                     if self.board[cell.board_y, cell.board_x] == Player.EMPTY.value:
                         legal_moves.add(cell)
+            else:
+                # Target sub-board is won or full, can play in any available sub-board
+                for sub_grid_x, sub_grid_y in itertools.product(range(3), range(3)):
+                    # Skip sub-boards that are won or full
+                    if (self.subboard_winner[sub_grid_y, sub_grid_x] != Player.EMPTY.value or
+                        self._is_sub_board_full(sub_grid_x, sub_grid_y)):
+                        continue
+
+                    # Add all empty cells in this available sub-board
+                    for cell_id in range(9):
+                        cell = Position(
+                            sub_grid_x, sub_grid_y, cell_id % 3, cell_id // 3
+                        )
+                        if self.board[cell.board_y, cell.board_x] == Player.EMPTY.value:
+                            legal_moves.add(cell)
 
         return list(legal_moves)
 
@@ -228,7 +250,7 @@ class UltimateTicTacToeBoard:
         Render the board as a string for display.
 
         Returns:
-            String representation of the board
+            String representation of the board with sub-boards separated by lines
         """
         result = []
 
@@ -273,37 +295,50 @@ class UltimateTicTacToeBoard:
         Get current board state.
 
         Returns:
-            Tuple of (main_board, meta_board)
+            Tuple of (main_board, meta_board) where:
+            - main_board: 9x9 array representing the full board
+            - meta_board: 3x3 array representing which sub-boards are won
         """
         return self.board.copy(), self.subboard_winner.copy()
 
     @property
     def game_over(self) -> bool:
-        """Check if the game is over."""
-        # If either player has a winning line on the meta‑board, the game is over
+        """
+        Check if the game is over.
+        
+        Game ends when:
+        1. A player wins 3 sub-boards in a row (horizontally, vertically, or diagonally)
+        2. All sub-boards are either won or full (draw)
+        """
+        # Check if either player has a winning line on the meta-board
         for player in (Player.X, Player.O):
             if self._check_win_pattern_for_player(self.subboard_winner, player):
                 return True
 
-        # Check for draw (no empty and undecided sub‑board remains)
+        # Check for draw: all sub-boards must be either won or full
         for i in range(3):
             for j in range(3):
-                if self.subboard_winner[i, j] == Player.EMPTY.value and not self._is_sub_board_full(
-                    j, i
-                ):
+                # If any sub-board is not won and not full, game is not over
+                if (self.subboard_winner[i, j] == Player.EMPTY.value and 
+                    not self._is_sub_board_full(j, i)):
                     return False
 
-        # Draw
+        # All sub-boards are either won or full → draw
         return True
 
     @property
     def winner(self) -> Player:
-        """Return the winner, or Player.EMPTY if draw / not finished."""
+        """
+        Return the winner, or Player.EMPTY if draw or game not finished.
+        
+        Returns:
+            Player.X or Player.O if that player has won, Player.EMPTY otherwise
+        """
         # If the game is not yet over there is no winner
         if not self.game_over:
             return Player.EMPTY
 
-        # Check which player (if any) owns a winning line on the meta‑board
+        # Check which player (if any) owns a winning line on the meta-board
         for player in (Player.X, Player.O):
             if self._check_win_pattern_for_player(self.subboard_winner, player):
                 return player
@@ -341,7 +376,15 @@ class UltimateTicTacToeBoard:
         return result
 
     def _is_sub_board_full(self, grid_x: int, grid_y: int) -> bool:
-        """Check if a sub-board is full."""
+        """
+        Check if a sub-board is full (no empty cells).
+        
+        Args:
+            grid_x, grid_y: Sub-grid coordinates (0-2)
+            
+        Returns:
+            True if the sub-board has no empty cells, False otherwise
+        """
         start_y = grid_y * 3
         start_x = grid_x * 3
         sub_board_data = self.board[start_y:start_y + 3, start_x:start_x + 3]
@@ -350,7 +393,16 @@ class UltimateTicTacToeBoard:
     def _check_win_pattern_for_player(
         self, board_slice: np.ndarray, player: Player
     ) -> bool:
-        """Check if a specific player has a winning pattern on a 3x3 board slice."""
+        """
+        Check if a specific player has a winning pattern on a 3x3 board slice.
+        
+        Args:
+            board_slice: 3x3 numpy array to check
+            player: Player to check for winning pattern
+            
+        Returns:
+            True if the player has 3 in a row (horizontally, vertically, or diagonally)
+        """
         player_value = player.value
 
         # Check rows
@@ -382,8 +434,8 @@ class UltimateTicTacToeBoard:
 
         Args:
             board_state: 9x9 board state
-            current_player: Current player (optional)
-            last_move: Last move made as Position object (optional)
+            current_player: Current player
+            last_move: Last move made as Position object
         """
         self.board = board_state.copy()
         self.current_player = current_player
