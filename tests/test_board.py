@@ -23,13 +23,16 @@ class TestUltimateTicTacToeBoard:
 
     def test_reset(self, board):
         """Test board reset"""
-        # Make some moves
+        # Arrange
+        # Make some moves to change the board state
         board.make_move(Position(40))  # board_id 40 = (4, 4) in board coordinates
         board.make_move(Position(30))   # board_id 30 = (3, 3) in sub-board (1,1)
 
-        # Reset
+        # Act
+        # Reset the board
         board.reset()
 
+        # Assert
         assert np.all(board.board == 0)
         assert np.all(board.subboard_winner == 0)
         assert board.current_player == Player.X
@@ -50,10 +53,15 @@ class TestUltimateTicTacToeBoard:
 
     def test_legal_moves_after_move(self, board):
         """Test legal moves after making a move"""
+        # Arrange
+        # (No specific arrangement needed - using fresh board from fixture)
+        
+        # Act
         # Make a move at board position 40 (center of the board)
         # This corresponds to sub_grid (1,1), cell (1,1)
         board.make_move(Position(40))
 
+        # Assert
         # Next move should be restricted to sub-board corresponding to cell (1,1)
         # which is sub-board at (1,1)
         legal_moves = board.get_legal_moves()
@@ -72,10 +80,15 @@ class TestUltimateTicTacToeBoard:
 
     def test_make_move(self, board):
         """Test making moves"""
-        # Make a valid move
+        # Arrange
+        # Set up the position to make a move
         position = Position(40)  # board_id 40
+        
+        # Act
+        # Make a valid move
         board.make_move(position)
 
+        # Assert
         # Check that the move was made
         assert board.board[position.board_y, position.board_x] == Player.X.value
         assert board.last_move == position
@@ -83,16 +96,19 @@ class TestUltimateTicTacToeBoard:
 
     def test_make_invalid_move(self, board):
         """Test making invalid moves"""
-        # Make a move
+        # Arrange
+        # Set up a board state with one move already made
         position = Position(40)
         board.make_move(position)
 
+        # Act & Assert
         # Try to make the same move again - should raise ValueError
         with pytest.raises(ValueError):
             board.make_move(position)
 
     def test_sub_board_win(self, board):
         """Test sub-board win detection"""
+        # Arrange
         # Set up a situation where sub-board 0 has been won by X
         # Sub-board 0 top row: X X X
         # Sub-board 0 middle row: O O O  
@@ -107,11 +123,13 @@ class TestUltimateTicTacToeBoard:
         board_state[1, 1] = Player.O.value  # Position(10)
         board_state[1, 2] = Player.O.value  # Position(11)
 
+        # Act
         # Set the board state directly
         board.board = board_state
         board.current_player = Player.O
         board.last_move = Position(2)
 
+        # Assert
         # Sub-board 0 should be won by X
         assert board.subboard_winner[0, 0] == Player.X.value
 
@@ -127,6 +145,7 @@ class TestUltimateTicTacToeBoard:
 
     def test_game_win(self, board):
         """Test game win detection by controlling meta-board"""
+        # Arrange
         # Create a situation where X wins the top row of meta-board
         # Set sub-boards (0,0), (1,0), (2,0) as won by X
         board_state = np.zeros((9, 9), dtype=np.int8)
@@ -138,11 +157,13 @@ class TestUltimateTicTacToeBoard:
             for i in range(3):
                 board_state[0, start_x + i] = Player.X.value
 
+        # Act
         # Set the board state directly
         board.board = board_state
         board.current_player = Player.O
         board.last_move = Position(2)
 
+        # Assert
         assert board.game_over
         assert board.winner == Player.X
 
@@ -153,25 +174,31 @@ class TestUltimateTicTacToeBoard:
 
     def test_render(self, board):
         """Test board rendering"""
-        # Make some moves
+        # Arrange
+        # Make some moves to create a testable board state
         board.make_move(Position(40))  # Center position
         board.make_move(Position(30))   # Valid position in sub-board (1,1)
 
+        # Act
         rendered = board.render()
 
+        # Assert
         # Check that render produces a string
         assert isinstance(rendered, str)
         assert len(rendered) > 0
 
     def test_copy(self, board):
         """Test board copying"""
-        # Make some moves
+        # Arrange
+        # Make some moves to create a testable board state
         board.make_move(Position(40))
         board.make_move(Position(30))
 
+        # Act
         # Copy the board
         board_copy = board.copy()
 
+        # Assert
         # Check that copy is independent
         assert np.array_equal(board.board, board_copy.board)
         assert np.array_equal(board.subboard_winner, board_copy.subboard_winner)
@@ -186,10 +213,15 @@ class TestUltimateTicTacToeBoard:
 
     def test_debug_coordinates(self, board):
         """Debug test to understand coordinate mapping"""
-        # Make a move at position 40 (center of board)
+        # Arrange
+        # Set up a position to test
         position = Position(40)
+        
+        # Act
+        # Make a move at position 40 (center of board)
         board.make_move(position)
 
+        # Assert
         # Print board state to understand coordinate mapping
         print("Board after move at position 40:")
         print(board.board)
@@ -216,6 +248,7 @@ class TestUltimateTicTacToeBoard:
 
     def test_sub_board_full(self, board):
         """Test that when a sub-board is full, next move can be anywhere"""
+        # Arrange
         # Fill sub-board 0 completely without creating a winner
         board_state = np.zeros((9, 9), dtype=np.int8)
         # Fill sub-board 0 (positions 0-8) alternating X and O
@@ -227,11 +260,13 @@ class TestUltimateTicTacToeBoard:
             for j in range(3):
                 board_state[i, j] = pattern[i * 3 + j]
 
+        # Act
         # Set the board state directly
         board.board = board_state
         board.current_player = Player.O
         board.last_move = Position(8)
 
+        # Assert
         # Sub-board 0 is full but not won, so next moves can be anywhere except sub-board 0
         legal_moves = board.get_legal_moves()
         
@@ -247,17 +282,20 @@ class TestUltimateTicTacToeBoard:
 
     def test_legal_moves_restricted(self, board):
         """Test that legal moves are restricted to target sub-board when it's not full/won"""
+        # Arrange
         # Set up a situation where sub-board 0 has some moves but is not full/won
         board_state = np.zeros((9, 9), dtype=np.int8)
         board_state[0, 0] = Player.X.value  # Position(0)
         board_state[0, 1] = Player.O.value  # Position(1)
 
+        # Act
         # Set the board state with last move directing play to sub-board 1
         # Position(1) has cell coordinates (1, 0), so next play goes to sub-grid (1, 0)
         board.board = board_state
         board.current_player = Player.X
         board.last_move = Position(1)
 
+        # Assert
         # Next moves should be restricted to sub-board at (1, 0)
         legal_moves = board.get_legal_moves()
         
