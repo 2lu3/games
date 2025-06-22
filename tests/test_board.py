@@ -4,6 +4,60 @@ from src.utttrlsim.board import UltimateTicTacToeBoard, Player, Position
 class TestUltimateTicTacToeBoard:
     """Test cases for UltimateTicTacToeBoard"""
 
+    # ヘルパーメソッド
+    def create_empty_board_state(self):
+        """空のboard_stateを作成"""
+        return np.zeros((9, 9), dtype=np.int8)
+    
+    def fill_sub_board(self, board_state, grid_x, grid_y, pattern):
+        """指定したサブボードを指定したパターンで埋める
+        
+        Args:
+            board_state: 対象のboard_state
+            grid_x: サブボードのx座標 (0-2)
+            grid_y: サブボードのy座標 (0-2) 
+            pattern: 埋めるパターン
+                     - 9要素のリスト: 各セルの値を指定
+                     - プレイヤー値: すべてのセルを同じ値で埋める
+                     - 'top_row', 'middle_row', 'bottom_row' + プレイヤー値のタプル
+        """
+        start_x = grid_x * 3
+        start_y = grid_y * 3
+        
+        if isinstance(pattern, list) and len(pattern) == 9:
+            # 9要素のリストパターン
+            for i in range(3):
+                for j in range(3):
+                    board_state[start_y + i, start_x + j] = pattern[i * 3 + j]
+        elif isinstance(pattern, tuple) and len(pattern) == 2:
+            # 行指定パターン (row_type, player_value)
+            row_type, player_value = pattern
+            if row_type == 'top_row':
+                for j in range(3):
+                    board_state[start_y, start_x + j] = player_value
+            elif row_type == 'middle_row':
+                for j in range(3):
+                    board_state[start_y + 1, start_x + j] = player_value
+            elif row_type == 'bottom_row':
+                for j in range(3):
+                    board_state[start_y + 2, start_x + j] = player_value
+        else:
+            # 単一値で全セルを埋める
+            for i in range(3):
+                for j in range(3):
+                    board_state[start_y + i, start_x + j] = pattern
+    
+    def fill_position(self, board_state, position_id, player_value):
+        """指定したposition_idに値を設定"""
+        pos = Position(position_id)
+        board_state[pos.board_y, pos.board_x] = player_value
+    
+    def setup_board_with_state(self, board_state, current_player, last_move):
+        """board_stateを設定してボードインスタンスを返す"""
+        board = UltimateTicTacToeBoard()
+        board.set_board_state(board_state, current_player, last_move)
+        return board
+
     def test_initialization(self):
         """Test board initialization"""
         board = UltimateTicTacToeBoard()
@@ -99,24 +153,16 @@ class TestUltimateTicTacToeBoard:
 
     def test_sub_board_win(self):
         """Test sub-board win detection"""
-        board = UltimateTicTacToeBoard()
-
         # Set up a situation where sub-board 0 has been won by X
         # Sub-board 0 top row: X X X
         # Sub-board 0 middle row: O O O  
         # Sub-board 0 bottom row: . . .
-        board_state = np.zeros((9, 9), dtype=np.int8)
-        # Sub-board 0 top row positions: 0, 1, 2
-        board_state[0, 0] = Player.X.value  # Position(0)
-        board_state[0, 1] = Player.X.value  # Position(1)
-        board_state[0, 2] = Player.X.value  # Position(2)
-        # Sub-board 0 middle row positions: 9, 10, 11  
-        board_state[1, 0] = Player.O.value  # Position(9)
-        board_state[1, 1] = Player.O.value  # Position(10)
-        board_state[1, 2] = Player.O.value  # Position(11)
-
+        board_state = self.create_empty_board_state()
+        self.fill_sub_board(board_state, 0, 0, ('top_row', Player.X.value))
+        self.fill_sub_board(board_state, 0, 0, ('middle_row', Player.O.value))
+        
         # Set the board state
-        board.set_board_state(board_state, Player.O, Position(2))
+        board = self.setup_board_with_state(board_state, Player.O, Position(2))
 
         # Sub-board 0 should be won by X
         assert board.subboard_winner[0, 0] == Player.X.value
@@ -133,21 +179,16 @@ class TestUltimateTicTacToeBoard:
 
     def test_game_win(self):
         """Test game win detection by controlling meta-board"""
-        board = UltimateTicTacToeBoard()
-
         # Create a situation where X wins the top row of meta-board
         # Set sub-boards (0,0), (1,0), (2,0) as won by X
-        board_state = np.zeros((9, 9), dtype=np.int8)
+        board_state = self.create_empty_board_state()
         
         # Create winning patterns in sub-boards 0, 1, 2
         for sub_grid_x in range(3):
-            start_x = sub_grid_x * 3
-            # Make top row of each sub-board won by X
-            for i in range(3):
-                board_state[0, start_x + i] = Player.X.value
+            self.fill_sub_board(board_state, sub_grid_x, 0, ('top_row', Player.X.value))
 
         # Set the board state
-        board.set_board_state(board_state, Player.O, Position(2))
+        board = self.setup_board_with_state(board_state, Player.O, Position(2))
 
         assert board.game_over
         assert board.winner == Player.X
@@ -233,21 +274,17 @@ class TestUltimateTicTacToeBoard:
 
     def test_sub_board_full(self):
         """Test that when a sub-board is full, next move can be anywhere"""
-        board = UltimateTicTacToeBoard()
-
         # Fill sub-board 0 completely without creating a winner
-        board_state = np.zeros((9, 9), dtype=np.int8)
+        board_state = self.create_empty_board_state()
         # Fill sub-board 0 (positions 0-8) alternating X and O
         pattern = [Player.X.value, Player.O.value, Player.X.value,
                   Player.O.value, Player.X.value, Player.O.value,
                   Player.X.value, Player.O.value, Player.X.value]
         
-        for i in range(3):
-            for j in range(3):
-                board_state[i, j] = pattern[i * 3 + j]
+        self.fill_sub_board(board_state, 0, 0, pattern)
 
         # Set the board state
-        board.set_board_state(board_state, Player.O, Position(8))
+        board = self.setup_board_with_state(board_state, Player.O, Position(8))
 
         # Sub-board 0 is full but not won, so next moves can be anywhere except sub-board 0
         legal_moves = board.get_legal_moves()
@@ -264,16 +301,14 @@ class TestUltimateTicTacToeBoard:
 
     def test_legal_moves_restricted(self):
         """Test that legal moves are restricted to target sub-board when it's not full/won"""
-        board = UltimateTicTacToeBoard()
-
         # Set up a situation where sub-board 0 has some moves but is not full/won
-        board_state = np.zeros((9, 9), dtype=np.int8)
-        board_state[0, 0] = Player.X.value  # Position(0)
-        board_state[0, 1] = Player.O.value  # Position(1)
+        board_state = self.create_empty_board_state()
+        self.fill_position(board_state, 0, Player.X.value)  # Position(0)
+        self.fill_position(board_state, 1, Player.O.value)  # Position(1)
 
         # Set the board state with last move directing play to sub-board 1
         # Position(1) has cell coordinates (1, 0), so next play goes to sub-grid (1, 0)
-        board.set_board_state(board_state, Player.X, Position(1))
+        board = self.setup_board_with_state(board_state, Player.X, Position(1))
 
         # Next moves should be restricted to sub-board at (1, 0)
         legal_moves = board.get_legal_moves()
