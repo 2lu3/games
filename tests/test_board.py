@@ -14,8 +14,8 @@ class TestUltimateTicTacToeBoard:
         """Test board initialization"""
         assert board.board.shape == (9, 9)
         assert board.subboard_winner.shape == (3, 3)
-        assert np.all(board.board == 0)
-        assert np.all(board.subboard_winner == 0)
+        np.testing.assert_array_equal(board.board, 0, err_msg="初期化後のboard配列はすべて0であるべき")
+        np.testing.assert_array_equal(board.subboard_winner, 0, err_msg="初期化後のsubboard_winner配列はすべて0であるべき")
         assert board.current_player == Player.X
         assert board.last_move is None
         assert not board.game_over
@@ -33,8 +33,8 @@ class TestUltimateTicTacToeBoard:
         board.reset()
 
         # Assert
-        assert np.all(board.board == 0)
-        assert np.all(board.subboard_winner == 0)
+        np.testing.assert_array_equal(board.board, 0, err_msg="リセット後のboard配列はすべて0であるべき")
+        np.testing.assert_array_equal(board.subboard_winner, 0, err_msg="リセット後のsubboard_winner配列はすべて0であるべき")
         assert board.current_player == Player.X
         assert board.last_move is None
         assert not board.game_over
@@ -90,7 +90,11 @@ class TestUltimateTicTacToeBoard:
 
         # Assert
         # Check that the move was made
-        assert board.board[position.board_y, position.board_x] == Player.X.value
+        np.testing.assert_equal(
+            board.board[position.board_y, position.board_x], 
+            Player.X.value,
+            err_msg=f"position ({position.board_y}, {position.board_x})の値はPlayer.X.value({Player.X.value})であるべき"
+        )
         assert board.last_move == position
         assert board.current_player == Player.O
 
@@ -131,7 +135,11 @@ class TestUltimateTicTacToeBoard:
 
         # Assert
         # Sub-board 0 should be won by X
-        assert board.subboard_winner[0, 0] == Player.X.value
+        np.testing.assert_equal(
+            board.subboard_winner[0, 0], 
+            Player.X.value,
+            err_msg=f"subboard_winner[0, 0]はPlayer.X.value({Player.X.value})であるべき - サブボード0はXが勝利"
+        )
 
         # Since sub-board 0 is won, next moves can be played anywhere except sub-board 0
         legal_moves = board.get_legal_moves()
@@ -200,8 +208,8 @@ class TestUltimateTicTacToeBoard:
 
         # Assert
         # Check that copy is independent
-        assert np.array_equal(board.board, board_copy.board)
-        assert np.array_equal(board.subboard_winner, board_copy.subboard_winner)
+        np.testing.assert_array_equal(board.board, board_copy.board, err_msg="コピー直後はboard配列が同じであるべき")
+        np.testing.assert_array_equal(board.subboard_winner, board_copy.subboard_winner, err_msg="コピー直後はsubboard_winner配列が同じであるべき")
 
         # Make a move on the original
         legal_moves = board.get_legal_moves()
@@ -209,7 +217,12 @@ class TestUltimateTicTacToeBoard:
             board.make_move(legal_moves[0])
 
             # Copy should be unchanged
-            assert not np.array_equal(board.board, board_copy.board)
+            try:
+                np.testing.assert_array_equal(board.board, board_copy.board)
+                assert False, "元のボードに変更後、コピーは変更されないべき - 配列が等しくないはず"
+            except AssertionError:
+                # Expected: arrays should not be equal after modifying original
+                pass
 
     def test_debug_coordinates(self, board):
         """Debug test to understand coordinate mapping"""
@@ -232,7 +245,11 @@ class TestUltimateTicTacToeBoard:
 
         # Check what position was actually filled
         # Position 40 should be at board coordinates (4, 4)
-        assert board.board[4, 4] == Player.X.value
+        np.testing.assert_equal(
+            board.board[4, 4], 
+            Player.X.value,
+            err_msg=f"board[4, 4]はPlayer.X.value({Player.X.value})であるべき - position 40の着手後"
+        )
 
         # Check legal moves after first move
         legal_moves = board.get_legal_moves()
