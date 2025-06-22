@@ -15,8 +15,13 @@ class TestUltimateTicTacToeEnv:
 
     def test_initialization(self):
         """Test environment initialization"""
+        # _Arrange_
+        # (No setup needed for initialization test)
+
+        # _Act_
         env = UltimateTicTacToeEnv()
 
+        # _Assert_
         assert env.action_space.n == 81
         assert env.observation_space.shape == (9, 9)
         assert env.observation_space.dtype == np.int8
@@ -25,15 +30,15 @@ class TestUltimateTicTacToeEnv:
 
     def test_reset(self):
         """Test environment reset"""
+        # _Arrange_
         env = UltimateTicTacToeEnv()
-
-        # Make some moves
         env.step(40)  # sub_board 4, position 4
         env.step(0)  # sub_board 0, position 0
 
-        # Reset
+        # _Act_
         observation, info = env.reset()
 
+        # _Assert_
         # Check observation
         assert observation.shape == (9, 9)
         assert np.all(observation == 0)
@@ -54,14 +59,15 @@ class TestUltimateTicTacToeEnv:
 
     def test_step_valid_move(self):
         """Test making valid moves"""
+        # _Arrange_
         env = UltimateTicTacToeEnv()
-
         observation, info = env.reset()
-
-        # Make a valid move
         action = 40  # sub_board 4, position 4
+
+        # _Act_
         observation, reward, done, truncated, info = env.step(action)
 
+        # _Assert_
         # Check observation
         assert observation.shape == (9, 9)
         assert observation[4, 4] == 1  # X's move
@@ -79,111 +85,130 @@ class TestUltimateTicTacToeEnv:
 
     def test_step_invalid_move(self):
         """Test making invalid moves"""
+        # _Arrange_
         env = UltimateTicTacToeEnv()
-
         observation, info = env.reset()
+        env.step(40)  # Make a valid move first
 
-        # Make a move
-        env.step(40)
-
+        # _Act_
         # Try to make the same move again (invalid)
         observation, reward, done, truncated, info = env.step(40)
 
+        # _Assert_
         # Should be penalized and game should end
         assert reward == -100.0
         assert done
 
     def test_step_out_of_bounds(self):
         """Test making out-of-bounds moves"""
+        # _Arrange_
         env = UltimateTicTacToeEnv()
-
         observation, info = env.reset()
 
-        # Try invalid action
+        # _Act_ & _Assert_
+        # Try invalid action - should raise ValueError
         with pytest.raises(ValueError):
             env.step(100)
 
     def test_legal_actions(self):
         """Test legal actions mask"""
+        # _Arrange_
         env = UltimateTicTacToeEnv()
-
         observation, info = env.reset()
 
+        # _Act_
         legal_actions = env.get_legal_actions()
 
+        # _Assert_
         # Should have 81 actions, all legal at start
         assert legal_actions.shape == (81,)
         assert np.all(legal_actions)
 
-        # Make a move
+        # Additional test: make a move and check legal actions
         env.step(40)
-
-        # Get new legal actions
         legal_actions = env.get_legal_actions()
 
         # Should have 8 legal actions in sub-board 4
         assert np.sum(legal_actions) == 8
-
         # Check that action 40 is not legal anymore
         assert not legal_actions[40]
 
     def test_game_termination(self):
         """Test game termination conditions"""
+        # _Arrange_
         env = UltimateTicTacToeEnv()
 
+        # _Act_
         observation, info = env.reset()
 
+        # _Assert_
         # Create a winning pattern (simplified test)
         # This is a complex test - for now, just test basic functionality
         assert not info["game_over"]
 
     def test_render_human(self):
         """Test human rendering mode"""
+        # _Arrange_
         env = UltimateTicTacToeEnv(render_mode="human")
-
         observation, info = env.reset()
 
-        # Render should not raise an error
+        # _Act_
         result = env.render()
+
+        # _Assert_
+        # Render should not raise an error
         assert result is None
 
     def test_render_rgb_array(self):
         """Test RGB array rendering mode"""
+        # _Arrange_
         env = UltimateTicTacToeEnv(render_mode="rgb_array")
-
         observation, info = env.reset()
+        env.step(40)  # Make a move
 
-        # Make a move
-        env.step(40)
-
-        # Render should return an image
+        # _Act_
         result = env.render()
+
+        # _Assert_
+        # Render should return an image
         assert result is not None
         assert result.shape == (300, 300, 3)
         assert result.dtype == np.uint8
 
     def test_seed(self):
         """Test seeding functionality"""
+        # _Arrange_
         env = UltimateTicTacToeEnv()
 
-        # Set seed via reset
+        # _Act_
         observation, info = env.reset(seed=42)
 
+        # _Assert_
         # Check that environment was reset properly
         assert observation.shape == (9, 9)
         assert np.all(observation == 0)
 
     def test_close(self):
         """Test environment closing"""
+        # _Arrange_
         env = UltimateTicTacToeEnv()
 
-        # Close should not raise an error
+        # _Act_
         env.close()
+
+        # _Assert_
+        # Close should not raise an error (no explicit assert needed)
+        pass
 
     def test_gymnasium_compatibility(self):
         """Test that environment is compatible with Gymnasium"""
+        # _Arrange_
+        # (No setup needed for interface testing)
+
+        # _Act_
         env = UltimateTicTacToeEnv()
 
+        # _Assert_
         # Check that environment follows Gymnasium interface
         assert hasattr(env, "action_space")
         assert hasattr(env, "observation_space")
