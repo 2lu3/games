@@ -64,7 +64,7 @@ class TestUltimateTicTacToeEnv:
 
         # Check observation
         assert observation.shape == (9, 9)
-        assert observation[4, 4] == 1  # X's move
+        np.testing.assert_equal(observation[4, 4], 1)  # X's move
 
         # Check reward (should be 0 for non-terminal state)
         assert reward == 0.0

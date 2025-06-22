@@ -81,7 +81,7 @@ class TestUltimateTicTacToeBoard:
         assert success
 
         # Check that the move was made
-        assert board.board[position.board_y, position.board_x] == Player.X.value
+        np.testing.assert_equal(board.board[position.board_y, position.board_x], Player.X.value)
         assert board.last_move == position
         assert board.current_player == Player.O
 
@@ -119,7 +119,7 @@ class TestUltimateTicTacToeBoard:
         board.set_board_state(board_state, Player.O, Position(2))
 
         # Sub-board 0 should be won by X
-        assert board.subboard_winner[0, 0] == Player.X.value
+        np.testing.assert_equal(board.subboard_winner[0, 0], Player.X.value)
 
         # Since sub-board 0 is won, next moves can be played anywhere except sub-board 0
         legal_moves = board.get_legal_moves()
@@ -214,7 +214,7 @@ class TestUltimateTicTacToeBoard:
 
         # Check what position was actually filled
         # Position 40 should be at board coordinates (4, 4)
-        assert board.board[4, 4] == Player.X.value
+        np.testing.assert_equal(board.board[4, 4], Player.X.value)
 
         # Check legal moves after first move
         legal_moves = board.get_legal_moves()
