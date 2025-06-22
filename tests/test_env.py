@@ -6,7 +6,7 @@ import gymnasium as gym
 import numpy as np
 import pytest
 
-from utttrlsim.board import Player
+from utttrlsim.board import Player, Position
 from utttrlsim.env import UltimateTicTacToeEnv
 
 
@@ -48,7 +48,7 @@ class TestUltimateTicTacToeEnv:
 
         # Check board state
         assert np.all(env.board.board == 0)
-        assert np.all(env.board.meta_board == 0)
+        assert np.all(env.board.subboard_winner == 0)
         assert env.board.current_player == Player.X
         assert not env.board.game_over
 
@@ -74,7 +74,8 @@ class TestUltimateTicTacToeEnv:
 
         # Check info
         assert info["current_player"] == 2  # O's turn
-        assert info["last_move"] == (4, 4)
+        assert isinstance(info["last_move"], Position)
+        assert info["last_move"].board_id == 40
         assert not info["game_over"]
 
     def test_step_invalid_move(self):
@@ -121,11 +122,66 @@ class TestUltimateTicTacToeEnv:
         # Get new legal actions
         legal_actions = env.get_legal_actions()
 
-        # Should have 8 legal actions in sub-board 4
+        # Should have 8 legal actions in sub-board 4 (the cell position of the last move)
+        # The last move was at position 40, which corresponds to cell (1, 1) in sub-board 4
+        # So the next player must play in sub-board 4 (which is at grid position (1, 1))
         assert np.sum(legal_actions) == 8
 
         # Check that action 40 is not legal anymore
         assert not legal_actions[40]
+
+        # Check that only actions in sub-board 4 are legal
+        # Sub-board 4 corresponds to positions [30, 31, 32, 39, 40, 41, 48, 49, 50]
+        # But position 40 is already taken, so legal actions are [30, 31, 32, 39, 41, 48, 49, 50]
+        expected_legal_actions = [30, 31, 32, 39, 41, 48, 49, 50]
+        for action in range(81):
+            if legal_actions[action]:
+                assert action in expected_legal_actions
+
+    def test_position_class(self):
+        """Test Position class functionality"""
+        # Test initialization with board_id
+        pos1 = Position(40)
+        assert pos1.board_id == 40
+        assert pos1.board_x == 4
+        assert pos1.board_y == 4
+        assert pos1.sub_grid_x == 1
+        assert pos1.sub_grid_y == 1
+        assert pos1.sub_grid_id == 4
+        assert pos1.cell_x == 1
+        assert pos1.cell_y == 1
+        assert pos1.cell_id == 4
+        
+        # Test initialization with grid and cell coordinates
+        pos2 = Position(1, 1, 1, 1)
+        assert pos2.board_id == 40
+        assert pos2 == pos1
+        
+        # Test corner position
+        pos3 = Position(0)
+        assert pos3.board_x == 0
+        assert pos3.board_y == 0
+        assert pos3.sub_grid_x == 0
+        assert pos3.sub_grid_y == 0
+        assert pos3.cell_x == 0
+        assert pos3.cell_y == 0
+
+    def test_sub_grid_mapping(self):
+        """Test the mapping of sub-grids to board positions"""
+        # Create a mapping of sub-grid coordinates to board positions
+        sub_grid_positions = {}
+        
+        for board_id in range(81):
+            pos = Position(board_id)
+            sub_grid_key = (pos.sub_grid_x, pos.sub_grid_y)
+            if sub_grid_key not in sub_grid_positions:
+                sub_grid_positions[sub_grid_key] = []
+            sub_grid_positions[sub_grid_key].append(board_id)
+        
+        # Test that sub-grid (1, 1) contains the expected positions
+        sub_grid_1_1 = sub_grid_positions[(1, 1)]
+        expected_positions = [30, 31, 32, 39, 40, 41, 48, 49, 50]
+        assert sorted(sub_grid_1_1) == expected_positions
 
     def test_game_termination(self):
         """Test game termination conditions"""
