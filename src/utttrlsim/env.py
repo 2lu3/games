@@ -251,12 +251,13 @@ class UltimateTicTacToeEnv(gym.Env):
 
         return img
 
-    def get_legal_actions(self) -> np.ndarray:
+    def get_action_mask(self) -> np.ndarray:
         """
-        Get mask of legal actions.
-
-        Returns:
-            Boolean array where True indicates legal actions
+        Returns
+        -------
+        mask : np.ndarray(bool, shape=(81,))
+            True  → 今打てる
+            False → 打てない（サブボードが埋まっている など）
         """
         legal_moves = self.board.get_legal_moves()
         mask = np.zeros(81, dtype=bool)
