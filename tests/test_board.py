@@ -216,13 +216,19 @@ class TestUltimateTicTacToeBoard:
         if legal_moves:
             board.make_move(legal_moves[0])
 
-            # Copy should be unchanged
+            # Copy should be unchanged - arrays should NOT be equal after modifying original
             try:
                 np.testing.assert_array_equal(board.board, board_copy.board)
                 assert False, "元のボードに変更後、コピーは変更されないべき - 配列が等しくないはず"
             except AssertionError:
                 # Expected: arrays should not be equal after modifying original
+                # This means the copy is independent, which is what we want
                 pass
+
+            # Verify that the copy is indeed unchanged by checking a specific position
+            # The original board should have the new move, but the copy should not
+            assert board.board[legal_moves[0].board_y, legal_moves[0].board_x] != 0, "元のボードには新しい着手があるべき"
+            assert board_copy.board[legal_moves[0].board_y, legal_moves[0].board_x] == 0, "コピーされたボードには新しい着手がないべき"
 
     def test_debug_coordinates(self, board):
         """Debug test to understand coordinate mapping"""
