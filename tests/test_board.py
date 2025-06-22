@@ -10,6 +10,69 @@ class TestUltimateTicTacToeBoard:
         """Fixture to provide a fresh UltimateTicTacToeBoard instance for each test"""
         return UltimateTicTacToeBoard()
 
+    # Helper functions for test data generation
+    def fill_sub_board(self, board_state: np.ndarray, grid_x: int, grid_y: int, pattern: list):
+        """
+        Fill a sub-board with a specific pattern.
+        
+        Args:
+            board_state: The 9x9 board state array to modify
+            grid_x, grid_y: Sub-grid coordinates (0-2)  
+            pattern: List of 9 values to fill the sub-board (row-wise)
+        """
+        for i in range(3):
+            for j in range(3):
+                board_state[grid_y * 3 + i, grid_x * 3 + j] = pattern[i * 3 + j]
+
+    def create_sub_board_win(self, board_state: np.ndarray, grid_x: int, grid_y: int, player: Player, win_type: str = "row"):
+        """
+        Create a winning pattern in a sub-board.
+        
+        Args:
+            board_state: The 9x9 board state array to modify
+            grid_x, grid_y: Sub-grid coordinates (0-2)
+            player: Player who wins this sub-board
+            win_type: Type of win - "row", "col", "diag1", "diag2"
+        """
+        base_y = grid_y * 3
+        base_x = grid_x * 3
+        
+        if win_type == "row":
+            # Top row win
+            for j in range(3):
+                board_state[base_y, base_x + j] = player.value
+        elif win_type == "col":
+            # Left column win
+            for i in range(3):
+                board_state[base_y + i, base_x] = player.value
+        elif win_type == "diag1":
+            # Main diagonal win
+            for i in range(3):
+                board_state[base_y + i, base_x + i] = player.value
+        elif win_type == "diag2":
+            # Anti-diagonal win
+            for i in range(3):
+                board_state[base_y + i, base_x + (2 - i)] = player.value
+
+    def setup_board_state(self, board: UltimateTicTacToeBoard, board_state: np.ndarray, 
+                         current_player: Player, last_move: Position):
+        """
+        Set up the board with a specific state.
+        
+        Args:
+            board: Board instance to modify
+            board_state: The 9x9 board state array
+            current_player: Current player
+            last_move: Last move made
+        """
+        board.board = board_state.copy()
+        board.current_player = current_player
+        board.last_move = last_move
+
+    def create_empty_board_state(self) -> np.ndarray:
+        """Create an empty 9x9 board state."""
+        return np.zeros((9, 9), dtype=np.int8)
+
     def test_initialization(self, board):
         """Test board initialization"""
         assert board.board.shape == (9, 9)
@@ -114,24 +177,17 @@ class TestUltimateTicTacToeBoard:
         """Test sub-board win detection"""
         # Arrange
         # Set up a situation where sub-board 0 has been won by X
-        # Sub-board 0 top row: X X X
-        # Sub-board 0 middle row: O O O  
-        # Sub-board 0 bottom row: . . .
-        board_state = np.zeros((9, 9), dtype=np.int8)
-        # Sub-board 0 top row positions: 0, 1, 2
-        board_state[0, 0] = Player.X.value  # Position(0)
-        board_state[0, 1] = Player.X.value  # Position(1)
-        board_state[0, 2] = Player.X.value  # Position(2)
-        # Sub-board 0 middle row positions: 9, 10, 11  
+        board_state = self.create_empty_board_state()
+        # Create X win in top row of sub-board (0,0)
+        self.create_sub_board_win(board_state, 0, 0, Player.X, "row")
+        # Add some O moves in middle row of sub-board (0,0)
         board_state[1, 0] = Player.O.value  # Position(9)
         board_state[1, 1] = Player.O.value  # Position(10)
         board_state[1, 2] = Player.O.value  # Position(11)
 
         # Act
         # Set the board state directly
-        board.board = board_state
-        board.current_player = Player.O
-        board.last_move = Position(2)
+        self.setup_board_state(board, board_state, Player.O, Position(2))
 
         # Assert
         # Sub-board 0 should be won by X
@@ -156,20 +212,15 @@ class TestUltimateTicTacToeBoard:
         # Arrange
         # Create a situation where X wins the top row of meta-board
         # Set sub-boards (0,0), (1,0), (2,0) as won by X
-        board_state = np.zeros((9, 9), dtype=np.int8)
+        board_state = self.create_empty_board_state()
         
-        # Create winning patterns in sub-boards 0, 1, 2
+        # Create winning patterns in sub-boards 0, 1, 2 (top row of meta-board)
         for sub_grid_x in range(3):
-            start_x = sub_grid_x * 3
-            # Make top row of each sub-board won by X
-            for i in range(3):
-                board_state[0, start_x + i] = Player.X.value
+            self.create_sub_board_win(board_state, sub_grid_x, 0, Player.X, "row")
 
         # Act
         # Set the board state directly
-        board.board = board_state
-        board.current_player = Player.O
-        board.last_move = Position(2)
+        self.setup_board_state(board, board_state, Player.O, Position(2))
 
         # Assert
         assert board.game_over
@@ -273,21 +324,17 @@ class TestUltimateTicTacToeBoard:
         """Test that when a sub-board is full, next move can be anywhere"""
         # Arrange
         # Fill sub-board 0 completely without creating a winner
-        board_state = np.zeros((9, 9), dtype=np.int8)
+        board_state = self.create_empty_board_state()
         # Fill sub-board 0 (positions 0-8) alternating X and O
         pattern = [Player.X.value, Player.O.value, Player.X.value,
                   Player.O.value, Player.X.value, Player.O.value,
                   Player.X.value, Player.O.value, Player.X.value]
         
-        for i in range(3):
-            for j in range(3):
-                board_state[i, j] = pattern[i * 3 + j]
+        self.fill_sub_board(board_state, 0, 0, pattern)
 
         # Act
         # Set the board state directly
-        board.board = board_state
-        board.current_player = Player.O
-        board.last_move = Position(8)
+        self.setup_board_state(board, board_state, Player.O, Position(8))
 
         # Assert
         # Sub-board 0 is full but not won, so next moves can be anywhere except sub-board 0
@@ -307,16 +354,14 @@ class TestUltimateTicTacToeBoard:
         """Test that legal moves are restricted to target sub-board when it's not full/won"""
         # Arrange
         # Set up a situation where sub-board 0 has some moves but is not full/won
-        board_state = np.zeros((9, 9), dtype=np.int8)
+        board_state = self.create_empty_board_state()
         board_state[0, 0] = Player.X.value  # Position(0)
         board_state[0, 1] = Player.O.value  # Position(1)
 
         # Act
         # Set the board state with last move directing play to sub-board 1
         # Position(1) has cell coordinates (1, 0), so next play goes to sub-grid (1, 0)
-        board.board = board_state
-        board.current_player = Player.X
-        board.last_move = Position(1)
+        self.setup_board_state(board, board_state, Player.X, Position(1))
 
         # Assert
         # Next moves should be restricted to sub-board at (1, 0)
