@@ -150,23 +150,27 @@ class UltimateTicTacToeBoard:
         # Last move made (Position object)
         self.last_move: Optional[Position] = None
 
-    def make_move(self, position: Position) -> bool:
+    def make_move(self, position: Position) -> None:
         """
         Make a move on the board.
 
         Args:
             position: Position object representing the move
 
-        Returns:
-            True if move was successful, False otherwise
+        Raises:
+            RuntimeError: If the game is already over
+            ValueError: If the move is not legal
         """
         # Validate move
         if self.game_over:
-            return False
+            raise RuntimeError("Cannot make move: game is already over")
 
         legal_moves = self.get_legal_moves()
         if position not in legal_moves:
-            return False
+            raise ValueError(
+                f"Invalid move: position {position} is not in legal moves. "
+                f"Legal moves: {legal_moves}"
+            )
 
         # Make the move
         self.board[position.board_y, position.board_x] = self.current_player.value
@@ -176,8 +180,6 @@ class UltimateTicTacToeBoard:
 
         # Switch players
         self.current_player = Player.O if self.current_player == Player.X else Player.X
-
-        return True
 
     def get_legal_moves(self) -> List[Position]:
         """

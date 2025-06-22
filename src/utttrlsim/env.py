@@ -11,7 +11,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from .board import Player, UltimateTicTacToeBoard
+from .board import Player, UltimateTicTacToeBoard, Position
 
 
 class UltimateTicTacToeEnv(gym.Env):
@@ -101,12 +101,15 @@ class UltimateTicTacToeEnv(gym.Env):
             raise ValueError(f"Invalid action: {action}. Must be 0-80.")
 
         # Make move
-        success = self.board.make_move(sub_board, position)
-
-        if not success:
+        try:
+            # Create Position object from action
+            position_obj = Position(action)
+            self.board.make_move(position_obj)
+        except (ValueError, RuntimeError) as e:
             # Invalid move - penalize heavily
             observation = self._get_observation()
             info = self._get_info()
+            info['error'] = str(e)  # Include error details in info
             return observation, -100.0, True, False, info
 
         # Get new observation
@@ -155,7 +158,7 @@ class UltimateTicTacToeEnv(gym.Env):
             Dictionary containing additional info
         """
         return {
-            "meta_board": self.board.meta_board.copy(),
+            "meta_board": self.board.subboard_winner.copy(),
             "current_player": self.board.current_player.value,
             "legal_moves": self.board.get_legal_moves(),
             "game_over": self.board.game_over,
@@ -258,8 +261,8 @@ class UltimateTicTacToeEnv(gym.Env):
         legal_moves = self.board.get_legal_moves()
         mask = np.zeros(81, dtype=bool)
 
-        for sub_board, position in legal_moves:
-            action = sub_board * 9 + position
+        for position in legal_moves:
+            action = position.board_id
             mask[action] = True
 
         return mask
