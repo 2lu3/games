@@ -162,16 +162,114 @@ class TestUltimateTicTacToeBoard:
         assert board.current_player == Player.O
 
     def test_make_invalid_move(self, board):
-        """Test making invalid moves"""
-        # Arrange
-        # Set up a board state with one move already made
+        """Test making invalid moves - comprehensive negative testing"""
+        
+        # Test 1: 同じマスに２回置く (既存のテスト)
         position = Position(40)
         board.make_move(position)
-
-        # Act & Assert
-        # Try to make the same move again - should raise ValueError
-        with pytest.raises(ValueError):
+        
+        with pytest.raises(ValueError, match="Invalid move.*not in legal moves"):
             board.make_move(position)
+        
+        # Test 2: ゲーム終了後に着手する
+        # ゲームを終了状態にする (Xが3つのサブボードを制覇)
+        board_state = self.create_empty_board_state()
+        for sub_grid_x in range(3):
+            self.create_sub_board_win(board_state, sub_grid_x, 0, Player.X, "row")
+        self.setup_board_state(board, board_state, Player.O, Position(2))
+        
+        # ゲーム終了状態で着手を試みる
+        with pytest.raises(RuntimeError, match="Cannot make move.*game is already over"):
+            board.make_move(Position(50))
+        
+        # Test 3: ターゲット外のサブボードに着手する
+        board.reset()
+        board.make_move(Position(40))  # sub_grid (1,1), cell (1,1) → 次はsub_grid (1,1)に限定
+        
+        # 異なるサブボード（例：sub_grid (0,0)）に着手を試みる
+        wrong_subboard_position = Position(0)  # sub_grid (0,0)
+        with pytest.raises(ValueError, match="Invalid move.*not in legal moves"):
+            board.make_move(wrong_subboard_position)
+        
+        # Test 4: 勝利済みサブボードに着手する (間接的テスト)
+        board.reset()
+        board_state = self.create_empty_board_state()
+        
+        # サブボード(0,0)をXが勝利した状態にする
+        self.create_sub_board_win(board_state, 0, 0, Player.X, "row")
+        # 最後の着手をcell (0,0)に設定 → 次はsub_grid (0,0)がターゲット
+        self.setup_board_state(board, board_state, Player.O, Position(0, 0, 0, 0))
+        
+        # 勝利済みサブボード(0,0)の空きセルに着手を試みる（他のサブボードに分散される）
+        position_in_won_subboard = Position(0, 0, 1, 1)  # sub_grid (0,0)
+        with pytest.raises(ValueError, match="Invalid move.*not in legal moves"):
+            board.make_move(position_in_won_subboard)
+        
+        # Test 5: 満杯サブボードに着手する
+        board.reset()
+        board_state = self.create_empty_board_state()
+        
+        # サブボード(0,0)を満杯にする（勝者なし）
+        pattern = [Player.X.value, Player.O.value, Player.X.value,
+                  Player.O.value, Player.X.value, Player.O.value,
+                  Player.X.value, Player.O.value, Player.X.value]
+        self.fill_sub_board(board_state, 0, 0, pattern)
+        
+        # 最後の着手をcell (0,0)に設定 → 次はsub_grid (0,0)がターゲット
+        self.setup_board_state(board, board_state, Player.O, Position(0, 0, 0, 0))
+        
+        # 満杯サブボード(0,0)に着手を試みる
+        position_in_full_subboard = Position(0, 0, 1, 1)  # 実際には既に埋まっている
+        with pytest.raises(ValueError, match="Invalid move.*not in legal moves"):
+            board.make_move(position_in_full_subboard)
+    
+    def test_invalid_position_objects(self, board):
+        """Test invalid Position object creation and usage"""
+        
+        # Test 1: 範囲外のboard_id
+        with pytest.raises(AssertionError):
+            Position(-1)
+        
+        with pytest.raises(AssertionError):
+            Position(81)
+        
+        with pytest.raises(AssertionError):
+            Position(100)
+        
+        # Test 2: 範囲外のgrid/cell座標
+        with pytest.raises(AssertionError):
+            Position(-1, 0, 0, 0)  # grid_x out of range
+        
+        with pytest.raises(AssertionError):
+            Position(0, -1, 0, 0)  # grid_y out of range
+        
+        with pytest.raises(AssertionError):
+            Position(0, 0, -1, 0)  # cell_x out of range
+        
+        with pytest.raises(AssertionError):
+            Position(0, 0, 0, -1)  # cell_y out of range
+        
+        with pytest.raises(AssertionError):
+            Position(3, 0, 0, 0)  # grid_x out of range
+        
+        with pytest.raises(AssertionError):
+            Position(0, 3, 0, 0)  # grid_y out of range
+        
+        with pytest.raises(AssertionError):
+            Position(0, 0, 3, 0)  # cell_x out of range
+        
+        with pytest.raises(AssertionError):
+            Position(0, 0, 0, 3)  # cell_y out of range
+        
+        # Test 3: 不正な引数の数
+        with pytest.raises(ValueError, match="Position requires either 1 argument.*or 4 arguments"):
+            Position(0, 0)  # 2 arguments
+        
+        with pytest.raises(ValueError, match="Position requires either 1 argument.*or 4 arguments"):
+            Position(0, 0, 0)  # 3 arguments
+        
+        with pytest.raises(ValueError, match="Position requires either 1 argument.*or 4 arguments"):
+            Position(0, 0, 0, 0, 0)  # 5 arguments
 
     def test_sub_board_win(self, board):
         """Test sub-board win detection"""
