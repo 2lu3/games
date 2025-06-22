@@ -8,11 +8,16 @@ import torch
 import yaml
 import pathlib
 import argparse
+import sys
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 
+# プロジェクトルートをパスに追加
+project_root = pathlib.Path(__file__).parent.parent
+sys.path.insert(0, str(project_root / "src"))
+
 # ★忘れずに環境登録
-import env_registration
+from utttrlsim import env_registration
 
 
 def main():
@@ -26,7 +31,7 @@ def main():
     args = parser.parse_args()
     
     # 設定読み込み
-    config_path = pathlib.Path(__file__).parent / "config.yaml"
+    config_path = project_root / "config.yaml"
     if config_path.exists():
         with open(config_path, 'r', encoding='utf-8') as f:
             cfg = yaml.safe_load(f)

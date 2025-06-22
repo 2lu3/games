@@ -7,18 +7,21 @@ import yaml
 import torch
 import os
 import pathlib
+import sys
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import make_vec_env
+from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.callbacks import CheckpointCallback
 
+# プロジェクトルートをパスに追加
+project_root = pathlib.Path(__file__).parent.parent
+sys.path.insert(0, str(project_root / "src"))
+
 # ← 自作環境を Gym 登録しておく
-import env_registration
+from utttrlsim import env_registration
 
 def main():
-    # --- 設定読み込み（スクリプトと同じ場所の YAML を想定） ---
-    config_path = pathlib.Path(__file__).with_suffix(".yaml")
-    if not config_path.exists():
-        config_path = pathlib.Path(__file__).parent / "config.yaml"
+    # --- 設定読み込み（プロジェクトルートの YAML を参照） ---
+    config_path = project_root / "config.yaml"
     
     with open(config_path, 'r', encoding='utf-8') as f:
         cfg = yaml.safe_load(f)
@@ -36,15 +39,13 @@ def main():
     )
     
     # デバイス選択 (Apple Silicon対応)
-    if torch.backends.mps.is_available():
-        device = "mps"
-        print("Using Metal Performance Shaders (MPS) backend")
-    elif torch.cuda.is_available():
+    # MPSはCNNポリシーでない場合に警告が出るため、CPUを優先的に使用
+    if torch.cuda.is_available():
         device = "cuda"
         print("Using CUDA backend")
     else:
         device = "cpu"
-        print("Using CPU backend")
+        print("Using CPU backend (recommended for MlpPolicy)")
     
     # --- モデル作成 ---
     print("Creating PPO model...")
