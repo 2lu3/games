@@ -1,3 +1,6 @@
+import numpy as np
+from src.utttrlsim.board import UltimateTicTacToeBoard, Player
+
 class TestUltimateTicTacToeBoard:
     """Test cases for UltimateTicTacToeBoard"""
 
@@ -6,9 +9,9 @@ class TestUltimateTicTacToeBoard:
         board = UltimateTicTacToeBoard()
 
         assert board.board.shape == (9, 9)
-        assert board.meta_board.shape == (3, 3)
+        assert board.subboard_winner.shape == (3, 3)
         assert np.all(board.board == 0)
-        assert np.all(board.meta_board == 0)
+        assert np.all(board.subboard_winner == 0)
         assert board.current_player == Player.X
         assert board.last_move is None
         assert not board.game_over
@@ -26,7 +29,7 @@ class TestUltimateTicTacToeBoard:
         board.reset()
 
         assert np.all(board.board == 0)
-        assert np.all(board.meta_board == 0)
+        assert np.all(board.subboard_winner == 0)
         assert board.current_player == Player.X
         assert board.last_move is None
         assert not board.game_over
@@ -104,15 +107,15 @@ class TestUltimateTicTacToeBoard:
         board_state[1, 1] = Player.O.value  # サブボード0, pos 4
         board_state[1, 2] = Player.O.value  # サブボード0, pos 5
 
-        # meta_boardも設定（サブボード0はXが勝利）
-        meta_board_state = np.zeros((3, 3), dtype=np.int8)
-        meta_board_state[0, 0] = Player.X.value  # サブボード0はXが勝利
+        # subboard_winnerも設定（サブボード0はXが勝利）
+        subboard_winner_state = np.zeros((3, 3), dtype=np.int8)
+        subboard_winner_state[0, 0] = Player.X.value  # サブボード0はXが勝利
 
         # 盤面をセット
-        board.set_board_state(board_state, meta_board_state, Player.O, (0, 2))
+        board.set_board_state(board_state, subboard_winner_state, Player.O, (0, 2))
 
-        # サブボード0は勝敗が決まったので、meta_board[0,0]がXになっているはず
-        assert board.meta_board[0, 0] == Player.X.value
+        # サブボード0は勝敗が決まったので、subboard_winner[0,0]がXになっているはず
+        assert board.subboard_winner[0, 0] == Player.X.value
 
         # サブボード0は勝敗が決まったので、次の手はどこでも打てる
         legal_moves = board.get_legal_moves()
@@ -129,13 +132,13 @@ class TestUltimateTicTacToeBoard:
         board_state = np.zeros((9, 9), dtype=np.int8)
 
         # X controls the entire top row of the meta‑board
-        meta_board_state = np.zeros((3, 3), dtype=np.int8)
-        meta_board_state[0, :] = Player.X.value
+        subboard_winner_state = np.zeros((3, 3), dtype=np.int8)
+        subboard_winner_state[0, :] = Player.X.value
 
         # Apply state; last_move arbitrary
         board.set_board_state(
             board_state,
-            meta_board_state,
+            subboard_winner_state,
             current_player=Player.O,
             last_move=(2, 2),
         )
@@ -178,7 +181,7 @@ class TestUltimateTicTacToeBoard:
 
         # Check that copy is independent
         assert np.array_equal(board.board, board_copy.board)
-        assert np.array_equal(board.meta_board, board_copy.meta_board)
+        assert np.array_equal(board.subboard_winner, board_copy.subboard_winner)
 
         # Make a move on the original
         board.make_move(4, 5)
@@ -197,7 +200,7 @@ class TestUltimateTicTacToeBoard:
         print("Board after move (4, 0):")
         print(board.board)
         print("Meta board:")
-        print(board.meta_board)
+        print(board.subboard_winner)
         print("Last move:", board.last_move)
         print("Current player:", board.current_player)
 
@@ -241,13 +244,13 @@ class TestUltimateTicTacToeBoard:
                     print("Board after move (4, 2):")
                     print(board.board)
                     print("Meta board:")
-                    print(board.meta_board)
+                    print(board.subboard_winner)
 
                     # Position 2 in sub-board 4 should be at (3, 5) in main board
                     assert board.board[3, 5] == Player.X.value
 
                     # Now check if sub-board 4 is won
-                    assert board.meta_board[1, 1] == Player.X.value
+                    assert board.subboard_winner[1, 1] == Player.X.value
 
     def test_sub_board_full(self):
         """Test that when a sub-board is full, next move can be anywhere"""
@@ -260,11 +263,11 @@ class TestUltimateTicTacToeBoard:
             for j in range(3):
                 board_state[i, j] = (i + j) % 2 + 1  # XとOを交互に配置
 
-        # meta_boardは未勝利のまま
-        meta_board_state = np.zeros((3, 3), dtype=np.int8)
+        # subboard_winnerは未勝利のまま
+        subboard_winner_state = np.zeros((3, 3), dtype=np.int8)
 
         # 盤面をセット（最後の手はサブボード0のpos 8）
-        board.set_board_state(board_state, meta_board_state, Player.O, (0, 8))
+        board.set_board_state(board_state, subboard_winner_state, Player.O, (0, 8))
 
         # サブボード0は完全に埋まっているので、次の手はどこでも打てる
         legal_moves = board.get_legal_moves()
@@ -282,11 +285,11 @@ class TestUltimateTicTacToeBoard:
         board_state[0, 0] = Player.X.value  # サブボード0, pos 0
         board_state[0, 1] = Player.O.value  # サブボード0, pos 1
 
-        # meta_boardは未勝利
-        meta_board_state = np.zeros((3, 3), dtype=np.int8)
+        # subboard_winnerは未勝利
+        subboard_winner_state = np.zeros((3, 3), dtype=np.int8)
 
         # 盤面をセット（最後の手はサブボード0のpos 1）
-        board.set_board_state(board_state, meta_board_state, Player.X, (0, 1))
+        board.set_board_state(board_state, subboard_winner_state, Player.X, (0, 1))
 
         # 次の手はサブボード1（pos 1に対応）に制限される
         legal_moves = board.get_legal_moves()
