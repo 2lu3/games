@@ -63,8 +63,8 @@ class RandomAgent:
         if not legal_moves:
             raise ValueError("No legal moves available")
 
-        sub_board, position = random.choice(legal_moves)
-        return sub_board * 9 + position
+        pos = random.choice(legal_moves)
+        return pos.board_id
 
     def get_action_probs(self, board: UltimateTicTacToeBoard) -> np.ndarray:
         """
