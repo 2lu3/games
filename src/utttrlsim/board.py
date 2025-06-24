@@ -148,13 +148,41 @@ class UltimateTicTacToeBoard:
         # Main board: 9x9 grid
         if board is None:
             board = np.full((9, 9), Player.EMPTY.value, dtype=np.int8)
-        self.board: np.ndarray = board
+        self._board: np.ndarray = board
 
         # Current player (1 for X, 2 for O)
-        self.current_player: Player = current_player
+        self._current_player: Player = current_player
 
         # Last move made (Position object)
-        self.last_move: Optional[Position] = last_move
+        self._last_move: Optional[Position] = last_move
+
+    @property
+    def board(self) -> Tuple[Tuple[Position, Player], ...]:
+        """
+        Get board state as tuple of (Position, Player) tuples for non-empty cells.
+        
+        Returns:
+            Tuple of (Position, Player) tuples representing occupied cells
+        """
+        occupied_cells = []
+        for y in range(9):
+            for x in range(9):
+                cell_value = self._board[y, x]
+                if cell_value != Player.EMPTY.value:
+                    position = Position(x + y * 9)
+                    player = Player(cell_value)
+                    occupied_cells.append((position, player))
+        return tuple(occupied_cells)
+
+    @property
+    def current_player(self) -> Player:
+        """Get the current player."""
+        return self._current_player
+
+    @property
+    def last_move(self) -> Optional[Position]:
+        """Get the last move made."""
+        return self._last_move
 
     def make_move(self, position: Position) -> None:
         """
@@ -179,13 +207,13 @@ class UltimateTicTacToeBoard:
             )
 
         # Make the move
-        self.board[position.board_y, position.board_x] = self.current_player.value
+        self._board[position.board_y, position.board_x] = self._current_player.value
 
         # Update last move
-        self.last_move = position
+        self._last_move = position
 
         # Switch players
-        self.current_player = Player.O if self.current_player == Player.X else Player.X
+        self._current_player = Player.O if self._current_player == Player.X else Player.X
 
     def get_legal_moves(self) -> List[Position]:
         """
@@ -201,10 +229,10 @@ class UltimateTicTacToeBoard:
         """
         legal_moves = set()
 
-        if self.last_move is None:
+        if self._last_move is None:
             # First move: can play anywhere
             # Assert that board is completely empty for first move
-            assert np.all(self.board == 0), "Board must be empty for first move"
+            assert np.all(self._board == 0), "Board must be empty for first move"
 
             # All 81 positions are legal for first move
             for pos_id in range(81):
@@ -212,8 +240,8 @@ class UltimateTicTacToeBoard:
                 legal_moves.add(pos)
         else:
             # Subsequent moves: must play in the sub-board corresponding to last move's cell position
-            target_sub_grid_x = self.last_move.cell_x
-            target_sub_grid_y = self.last_move.cell_y
+            target_sub_grid_x = self._last_move.cell_x
+            target_sub_grid_y = self._last_move.cell_y
 
             # Check if target sub-board is available (not won and not full)
             target_sub_board_available = self.subboard_winner[
@@ -228,7 +256,7 @@ class UltimateTicTacToeBoard:
                     cell = Position(
                         target_sub_grid_x, target_sub_grid_y, cell_id % 3, cell_id // 3
                     )
-                    if self.board[cell.board_y, cell.board_x] == Player.EMPTY.value:
+                    if self._board[cell.board_y, cell.board_x] == Player.EMPTY.value:
                         legal_moves.add(cell)
             else:
                 # Target sub-board is won or full, can play in any available sub-board
@@ -246,16 +274,16 @@ class UltimateTicTacToeBoard:
                         cell = Position(
                             sub_grid_x, sub_grid_y, cell_id % 3, cell_id // 3
                         )
-                        if self.board[cell.board_y, cell.board_x] == Player.EMPTY.value:
+                        if self._board[cell.board_y, cell.board_x] == Player.EMPTY.value:
                             legal_moves.add(cell)
 
         return list(legal_moves)
 
     def reset(self) -> None:
         """Reset the board to initial state."""
-        self.board.fill(Player.EMPTY.value)
-        self.current_player = Player.X
-        self.last_move = None
+        self._board.fill(Player.EMPTY.value)
+        self._current_player = Player.X
+        self._last_move = None
 
     def render(self) -> str:
         """
@@ -272,7 +300,7 @@ class UltimateTicTacToeBoard:
                 for meta_col in range(3):
                     for sub_col in range(3):
                         pos = Position(meta_col, meta_row, sub_col, sub_row)
-                        cell = self.board[pos.board_y, pos.board_x]
+                        cell = self._board[pos.board_y, pos.board_x]
 
                         if cell == Player.EMPTY.value:
                             line += "."
@@ -297,9 +325,9 @@ class UltimateTicTacToeBoard:
     def copy(self) -> "UltimateTicTacToeBoard":
         """Create a deep copy of the board."""
         new_board = UltimateTicTacToeBoard()
-        new_board.board = self.board.copy()
-        new_board.current_player = self.current_player
-        new_board.last_move = self.last_move  # Position objects are immutable
+        new_board._board = self._board.copy()
+        new_board._current_player = self._current_player
+        new_board._last_move = self._last_move  # Position objects are immutable
         return new_board
 
     def get_state(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -311,7 +339,7 @@ class UltimateTicTacToeBoard:
             - main_board: 9x9 array representing the full board
             - meta_board: 3x3 array representing which sub-boards are won
         """
-        return self.board.copy(), self.subboard_winner.copy()
+        return self._board.copy(), self.subboard_winner.copy()
 
     @property
     def game_over(self) -> bool:
@@ -376,7 +404,7 @@ class UltimateTicTacToeBoard:
             # Extract sub-board data using numpy slicing
             start_y = grid_y * 3
             start_x = grid_x * 3
-            sub_board_data = self.board[start_y : start_y + 3, start_x : start_x + 3]
+            sub_board_data = self._board[start_y : start_y + 3, start_x : start_x + 3]
 
             # Check if X won this sub-board
             if self._check_win_pattern_for_player(sub_board_data, Player.X):
@@ -400,7 +428,7 @@ class UltimateTicTacToeBoard:
         """
         start_y = grid_y * 3
         start_x = grid_x * 3
-        sub_board_data = self.board[start_y : start_y + 3, start_x : start_x + 3]
+        sub_board_data = self._board[start_y : start_y + 3, start_x : start_x + 3]
         return not np.any(sub_board_data == Player.EMPTY.value)
 
     def _check_win_pattern_for_player(
@@ -450,6 +478,6 @@ class UltimateTicTacToeBoard:
             current_player: Current player
             last_move: Last move made as Position object
         """
-        self.board = board_state.copy()
-        self.current_player = current_player
-        self.last_move = last_move
+        self._board = board_state.copy()
+        self._current_player = current_player
+        self._last_move = last_move
