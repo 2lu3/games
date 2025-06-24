@@ -92,6 +92,9 @@ class UltimateTicTacToeEnv(gym.Env):
         Returns:
             Tuple of (observation, reward, done, truncated, info)
         """
+        # Store the player who made this move (before the move is made)
+        prev_player = self.board.current_player
+
         # Decode action
         sub_board = action // 9
         position = action % 9
@@ -105,19 +108,20 @@ class UltimateTicTacToeEnv(gym.Env):
             # Create Position object from action
             position_obj = Position(action)
             self.board.make_move(position_obj)
+            # Note: make_move() switches current_player at the end
         except (ValueError, RuntimeError) as e:
             # Invalid move - penalize heavily
             observation = self._get_observation()
             info = self._get_info()
-            info['error'] = str(e)  # Include error details in info
+            info["error"] = str(e)  # Include error details in info
             return observation, -100.0, True, False, info
 
         # Get new observation
         observation = self._get_observation()
         info = self._get_info()
 
-        # Calculate reward
-        reward = self._calculate_reward()
+        # Calculate reward based on the player who made the move
+        reward = self._calculate_reward(prev_player)
 
         # Check if episode is done
         done = self.board.game_over
@@ -168,9 +172,12 @@ class UltimateTicTacToeEnv(gym.Env):
             "last_move": self.board.last_move,
         }
 
-    def _calculate_reward(self) -> float:
+    def _calculate_reward(self, prev_player: Player) -> float:
         """
         Calculate reward for the current state.
+
+        Args:
+            prev_player: The player who made the last move
 
         Returns:
             Reward value: +1 for win, 0 for draw, -1 for loss
@@ -181,11 +188,11 @@ class UltimateTicTacToeEnv(gym.Env):
         if self.board.winner == Player.EMPTY:
             # Draw
             return 0.0
-        elif self.board.winner == self.board.current_player:
-            # Current player wins
+        elif self.board.winner == prev_player:
+            # Previous player wins
             return 1.0
         else:
-            # Current player loses
+            # Previous player loses
             return -1.0
 
     def _render_rgb_array(self) -> np.ndarray:
@@ -267,6 +274,15 @@ class UltimateTicTacToeEnv(gym.Env):
             mask[action] = True
 
         return mask
+
+    def get_legal_actions(self) -> np.ndarray:
+        """
+        Get legal actions as a boolean array.
+
+        Returns:
+            Boolean array indicating legal actions (True for legal, False for illegal)
+        """
+        return self.get_action_mask()
 
     def close(self) -> None:
         """Close the environment."""

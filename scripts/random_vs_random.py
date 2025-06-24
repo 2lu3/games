@@ -22,22 +22,12 @@ from src.utttrlsim.env import UltimateTicTacToeEnv
 def main():
     parser = argparse.ArgumentParser(description="Random Agent vs Random Agent 対戦")
     parser.add_argument(
-        "--games",
-        type=int,
-        default=10,
-        help="対戦回数 (デフォルト: 10)"
+        "--games", type=int, default=10, help="対戦回数 (デフォルト: 10)"
     )
     parser.add_argument(
-        "--seed",
-        type=int,
-        default=None,
-        help="乱数シード (デフォルト: None)"
+        "--seed", type=int, default=None, help="乱数シード (デフォルト: None)"
     )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="詳細出力を有効にする"
-    )
+    parser.add_argument("--verbose", action="store_true", help="詳細出力を有効にする")
 
     args = parser.parse_args()
 
@@ -47,10 +37,10 @@ def main():
 
 def run_random_vs_random(num_games: int, seed: int = None, verbose: bool = False):
     """ランダムエージェント同士の対戦を実行"""
-    
+
     print("Random Agent vs Random Agent")
     print("=" * 30)
-    
+
     # 環境とエージェントを初期化
     env = UltimateTicTacToeEnv()
     agent1 = RandomAgent()
@@ -70,7 +60,7 @@ def run_random_vs_random(num_games: int, seed: int = None, verbose: bool = False
     for game in range(num_games):
         if verbose:
             print(f"\nGame {game + 1}/{num_games}")
-        
+
         obs, info = env.reset()
 
         while True:
@@ -106,4 +96,4 @@ def run_random_vs_random(num_games: int, seed: int = None, verbose: bool = False
 
 
 if __name__ == "__main__":
-    main() 
+    main()

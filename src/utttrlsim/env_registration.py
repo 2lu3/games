@@ -11,7 +11,4 @@ from .env import UltimateTicTacToeEnv
 _ENV_ID = "UTTTRLSim-v0"
 
 if _ENV_ID not in gym.envs.registry:
-    gym.register(
-        id=_ENV_ID,
-        entry_point="utttrlsim:UltimateTicTacToeEnv"
-    )
+    gym.register(id=_ENV_ID, entry_point="utttrlsim:UltimateTicTacToeEnv")

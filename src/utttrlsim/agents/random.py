@@ -8,8 +8,9 @@ import random
 from typing import List, Optional, Tuple
 
 import numpy as np
+import gymnasium as gym
 
-from ..board import UltimateTicTacToeBoard
+from ..board import UltimateTicTacToeBoard, Position
 
 
 class RandomAgent:
@@ -31,24 +32,7 @@ class RandomAgent:
             random.seed(seed)
             np.random.seed(seed)
 
-    def select_action(self, board: UltimateTicTacToeBoard) -> Tuple[int, int]:
-        """
-        Select a random legal action.
-
-        Args:
-            board: Current board state
-
-        Returns:
-            Tuple of (sub_board, position) representing the selected move
-        """
-        legal_moves = board.get_legal_moves()
-
-        if not legal_moves:
-            raise ValueError("No legal moves available")
-
-        return random.choice(legal_moves)
-
-    def select_action_from_env(self, env) -> int:
+    def select_action(self, env: gym.Env) -> int:
         """
         Select a random legal action from environment.
 
@@ -81,8 +65,8 @@ class RandomAgent:
 
         if legal_moves:
             prob = 1.0 / len(legal_moves)
-            for sub_board, position in legal_moves:
-                action = sub_board * 9 + position
+            for position in legal_moves:
+                action = position.board_id
                 probs[action] = prob
 
         return probs

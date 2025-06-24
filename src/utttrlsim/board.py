@@ -18,7 +18,6 @@ Ultimate Tic-Tac-Toe Rules:
 from enum import Enum
 from typing import List, Optional, Set, Tuple, Union
 import itertools
-
 import numpy as np
 
 
@@ -139,16 +138,23 @@ class UltimateTicTacToeBoard:
     The board is divided into 9 3x3 sub-boards, each identified by grid coordinates (0-2, 0-2).
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        board: Optional[np.ndarray] = None,
+        current_player: Player = Player.X,
+        last_move: Optional[Position] = None,
+    ):
         """Initialize an empty Ultimate Tic-Tac-Toe board."""
         # Main board: 9x9 grid
-        self.board: np.ndarray = np.full((9, 9), Player.EMPTY.value, dtype=np.int8)
+        if board is None:
+            board = np.full((9, 9), Player.EMPTY.value, dtype=np.int8)
+        self.board: np.ndarray = board
 
         # Current player (1 for X, 2 for O)
-        self.current_player: Player = Player.X
+        self.current_player: Player = current_player
 
         # Last move made (Position object)
-        self.last_move: Optional[Position] = None
+        self.last_move: Optional[Position] = last_move
 
     def make_move(self, position: Position) -> None:
         """
@@ -210,9 +216,10 @@ class UltimateTicTacToeBoard:
             target_sub_grid_y = self.last_move.cell_y
 
             # Check if target sub-board is available (not won and not full)
-            target_sub_board_available = (
-                self.subboard_winner[target_sub_grid_y, target_sub_grid_x] == Player.EMPTY.value and
-                not self._is_sub_board_full(target_sub_grid_x, target_sub_grid_y)
+            target_sub_board_available = self.subboard_winner[
+                target_sub_grid_y, target_sub_grid_x
+            ] == Player.EMPTY.value and not self._is_sub_board_full(
+                target_sub_grid_x, target_sub_grid_y
             )
 
             if target_sub_board_available:
@@ -227,8 +234,11 @@ class UltimateTicTacToeBoard:
                 # Target sub-board is won or full, can play in any available sub-board
                 for sub_grid_x, sub_grid_y in itertools.product(range(3), range(3)):
                     # Skip sub-boards that are won or full
-                    if (self.subboard_winner[sub_grid_y, sub_grid_x] != Player.EMPTY.value or
-                        self._is_sub_board_full(sub_grid_x, sub_grid_y)):
+                    if self.subboard_winner[
+                        sub_grid_y, sub_grid_x
+                    ] != Player.EMPTY.value or self._is_sub_board_full(
+                        sub_grid_x, sub_grid_y
+                    ):
                         continue
 
                     # Add all empty cells in this available sub-board
@@ -307,7 +317,7 @@ class UltimateTicTacToeBoard:
     def game_over(self) -> bool:
         """
         Check if the game is over.
-        
+
         Game ends when:
         1. A player wins 3 sub-boards in a row (horizontally, vertically, or diagonally)
         2. All sub-boards are either won or full (draw)
@@ -321,8 +331,9 @@ class UltimateTicTacToeBoard:
         for i in range(3):
             for j in range(3):
                 # If any sub-board is not won and not full, game is not over
-                if (self.subboard_winner[i, j] == Player.EMPTY.value and 
-                    not self._is_sub_board_full(j, i)):
+                if self.subboard_winner[
+                    i, j
+                ] == Player.EMPTY.value and not self._is_sub_board_full(j, i):
                     return False
 
         # All sub-boards are either won or full → draw
@@ -332,7 +343,7 @@ class UltimateTicTacToeBoard:
     def winner(self) -> Player:
         """
         Return the winner, or Player.EMPTY if draw or game not finished.
-        
+
         Returns:
             Player.X or Player.O if that player has won, Player.EMPTY otherwise
         """
@@ -365,7 +376,7 @@ class UltimateTicTacToeBoard:
             # Extract sub-board data using numpy slicing
             start_y = grid_y * 3
             start_x = grid_x * 3
-            sub_board_data = self.board[start_y:start_y + 3, start_x:start_x + 3]
+            sub_board_data = self.board[start_y : start_y + 3, start_x : start_x + 3]
 
             # Check if X won this sub-board
             if self._check_win_pattern_for_player(sub_board_data, Player.X):
@@ -380,16 +391,16 @@ class UltimateTicTacToeBoard:
     def _is_sub_board_full(self, grid_x: int, grid_y: int) -> bool:
         """
         Check if a sub-board is full (no empty cells).
-        
+
         Args:
             grid_x, grid_y: Sub-grid coordinates (0-2)
-            
+
         Returns:
             True if the sub-board has no empty cells, False otherwise
         """
         start_y = grid_y * 3
         start_x = grid_x * 3
-        sub_board_data = self.board[start_y:start_y + 3, start_x:start_x + 3]
+        sub_board_data = self.board[start_y : start_y + 3, start_x : start_x + 3]
         return not np.any(sub_board_data == Player.EMPTY.value)
 
     def _check_win_pattern_for_player(
@@ -397,11 +408,11 @@ class UltimateTicTacToeBoard:
     ) -> bool:
         """
         Check if a specific player has a winning pattern on a 3x3 board slice.
-        
+
         Args:
             board_slice: 3x3 numpy array to check
             player: Player to check for winning pattern
-            
+
         Returns:
             True if the player has 3 in a row (horizontally, vertically, or diagonally)
         """

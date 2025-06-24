@@ -68,8 +68,10 @@ def play_human_vs_random():
     env.render()
 
     while True:
-        if env.current_player == 1:  # 人間のターン
+        if env.board.current_player.value == 1:  # 人間のターン
             print("\nあなたのターンです (X)")
+            legal_actions = [pos.board_id for pos in env.board.get_legal_moves()]
+            print(f"合法手: {legal_actions}")
             try:
                 action = int(input("行動を入力してください (0-80): "))
                 if not (0 <= action <= 80):
@@ -80,7 +82,7 @@ def play_human_vs_random():
                 continue
         else:  # エージェントのターン
             print("\nエージェントのターンです (O)")
-            action = agent.act(obs, env.legal_actions)
+            action = agent.select_action(env)
             print(f"エージェントの行動: {action}")
 
         obs, reward, terminated, truncated, info = env.step(action)
@@ -103,7 +105,9 @@ def play_random_vs_random(num_games: int, seed: Optional[int] = None):
     agent2 = RandomAgent()
 
     if seed is not None:
-        env.seed(seed)
+        obs, info = env.reset(seed=seed)
+    else:
+        obs, info = env.reset()
 
     wins = [0, 0]  # [agent1 wins, agent2 wins]
     draws = 0
@@ -112,10 +116,10 @@ def play_random_vs_random(num_games: int, seed: Optional[int] = None):
         obs, info = env.reset()
 
         while True:
-            if env.current_player == 1:
-                action = agent1.act(obs, env.legal_actions)
+            if env.board.current_player.value == 1:
+                action = agent1.select_action(env)
             else:
-                action = agent2.act(obs, env.legal_actions)
+                action = agent2.select_action(env)
 
             obs, reward, terminated, truncated, info = env.step(action)
 
