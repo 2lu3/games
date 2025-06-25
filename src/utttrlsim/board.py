@@ -54,15 +54,15 @@ class Position:
         if len(args) == 1:
             # Initialize from global ID
             board_id = args[0]
-            assert 0 <= board_id <= 80, f"Position ID must be 0-80, got {board_id}"
+            assert 0 <= board_id < 81, f"Position ID must be 0-80, got {board_id}"
             self._id = board_id
         elif len(args) == 4:
             # Initialize from grid and cell coordinates
             grid_x, grid_y, cell_x, cell_y = args
-            assert 0 <= grid_x <= 2, f"Grid X coordinate must be 0-2, got {grid_x}"
-            assert 0 <= grid_y <= 2, f"Grid Y coordinate must be 0-2, got {grid_y}"
-            assert 0 <= cell_x <= 2, f"Cell X coordinate must be 0-2, got {cell_x}"
-            assert 0 <= cell_y <= 2, f"Cell Y coordinate must be 0-2, got {cell_y}"
+            assert 0 <= grid_x < 3, f"Grid X coordinate must be 0-2, got {grid_x}"
+            assert 0 <= grid_y < 3, f"Grid Y coordinate must be 0-2, got {grid_y}"
+            assert 0 <= cell_x < 3, f"Cell X coordinate must be 0-2, got {cell_x}"
+            assert 0 <= cell_y < 3, f"Cell Y coordinate must be 0-2, got {cell_y}"
             self._id = (grid_x * 3 + cell_x) + (grid_y * 3 + cell_y) * 9
         else:
             raise ValueError(
@@ -251,10 +251,10 @@ class UltimateTicTacToeBoard:
 
         return list(legal_moves)
 
-    def reset(self) -> None:
+    def reset(self, current_player: Player = Player.X) -> None:
         """Reset the board to initial state."""
         self.board.fill(Player.EMPTY.value)
-        self.current_player = Player.X
+        self.current_player = current_player
         self.last_move = None
 
     def render(self) -> str:
@@ -435,21 +435,3 @@ class UltimateTicTacToeBoard:
             return True
 
         return False
-
-    def set_board_state(
-        self,
-        board_state: np.ndarray,
-        current_player: Player,
-        last_move: Position,
-    ) -> None:
-        """
-        Set the board state directly (for testing purposes).
-
-        Args:
-            board_state: 9x9 board state
-            current_player: Current player
-            last_move: Last move made as Position object
-        """
-        self.board = board_state.copy()
-        self.current_player = current_player
-        self.last_move = last_move

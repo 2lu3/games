@@ -9,10 +9,11 @@ import gymnasium as gym
 import numpy as np
 from typing import Any, Dict, Optional, Tuple
 
-from .board import Player
+from ..board import Player, Position
+from ..agent.random_agent import RandomAgent
 
 
-class OpponentWrapper(gym.Wrapper):
+class RandomOpponentWrapper(gym.Wrapper):
     """
     Wrapper that pits a PPO agent against an arbitrary opponent agent.
 
@@ -23,7 +24,7 @@ class OpponentWrapper(gym.Wrapper):
     4. Rewards are calculated from PPO agent's perspective
     """
 
-    def __init__(self, env: gym.Env, opponent_agent):
+    def __init__(self, env: gym.Env):
         """
         Initialize the OpponentWrapper.
 
@@ -32,7 +33,7 @@ class OpponentWrapper(gym.Wrapper):
             opponent_agent: Opponent agent instance (must have select_action_from_env or predict)
         """
         super().__init__(env)
-        self.opponent = opponent_agent
+        self.opponent = RandomAgent()
         self.prev_player = None
         self.step_count = 0
 

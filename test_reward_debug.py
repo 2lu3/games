@@ -11,8 +11,8 @@ project_root = pathlib.Path(__file__).parent
 sys.path.insert(0, str(project_root / "src"))
 
 from utttrlsim.env import UltimateTicTacToeEnv
-from utttrlsim.random_opponent_wrapper import OpponentWrapper
-from utttrlsim.agents.random import RandomAgent
+from utttrlsim.wrapper.random_opponent_wrapper import OpponentWrapper
+from utttrlsim.agent.random_agent import RandomAgent
 from utttrlsim.board import Player
 
 

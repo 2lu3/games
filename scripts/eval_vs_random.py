@@ -23,8 +23,8 @@ sys.path.insert(0, str(project_root / "src"))
 
 # 自作環境を Gym 登録しておく
 from utttrlsim import env_registration
-from utttrlsim.random_opponent_wrapper import OpponentWrapper
-from utttrlsim.agents.random import RandomAgent
+from utttrlsim.wrapper.random_opponent_wrapper import OpponentWrapper
+from utttrlsim.agent.random_agent import RandomAgent
 
 
 def mask_fn(env):
