@@ -3,27 +3,29 @@
 Ultimate Tic-Tac-Toe 強化学習トレーニングスクリプト（Random対戦版）
 """
 
-import yaml
-import torch
 import os
 import pathlib
 import sys
+from datetime import datetime
+
 import gymnasium as gym
+import torch
+import yaml
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.wrappers.action_masker import ActionMasker
 from stable_baselines3.common.callbacks import CheckpointCallback
-from datetime import datetime
+
+# 自作環境を Gym 登録しておく
+from utttrlsim import env_registration
+from utttrlsim.board import Player
+from utttrlsim.env import UltimateTicTacToeEnv
+from utttrlsim.policies import random_policy
+from utttrlsim.wrappers import SelfPlayWrapper
 
 # プロジェクトルートをパスに追加
 # project_root = pathlib.Path(__file__).parent.parent
 # sys.path.insert(0, str(project_root / "src"))
 
-# 自作環境を Gym 登録しておく
-from utttrlsim import env_registration
-from utttrlsim.env import UltimateTicTacToeEnv
-from utttrlsim.policies import random_policy
-from utttrlsim.wrappers import SelfPlayWrapper
-from utttrlsim.board import Player
 
 
 def mask_fn(env):
@@ -38,7 +40,7 @@ def mask_fn(env):
 
 def main():
     # --- 設定読み込み（プロジェクトルートの YAML を参照） ---
-    config_path =  "config.yaml"
+    config_path = "config.yaml"
 
     with open(config_path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)

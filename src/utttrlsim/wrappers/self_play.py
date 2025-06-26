@@ -6,6 +6,7 @@ by automatically handling opponent moves and converting rewards to 0-sum.
 """
 
 from typing import Any, Callable, Dict, Protocol, Tuple
+
 import gymnasium as gym
 import numpy as np
 
@@ -135,15 +136,20 @@ class SelfPlayWrapper(gym.Wrapper):
         Returns:
             Observation with flipped board (X and O swapped) and action mask
         """
-        new_obs = {k: v.copy() if isinstance(v, np.ndarray) else v for k, v in obs.items()}
-        
+        new_obs = {
+            k: v.copy() if isinstance(v, np.ndarray) else v for k, v in obs.items()
+        }
+
         # Board flip
         x = Player.X.value
         o = Player.O.value
-        new_obs["board"] = np.where(new_obs["board"] == x, o, np.where(new_obs["board"] == o, x, new_obs["board"]))
+        new_obs["board"] = np.where(
+            new_obs["board"] == x,
+            o,
+            np.where(new_obs["board"] == o, x, new_obs["board"]),
+        )
 
         return new_obs
 
     def get_action_mask(self):
         return self.env.get_action_mask()
-

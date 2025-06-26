@@ -3,17 +3,18 @@
 Ultimate Tic-Tac-Toe 学習済みモデル vs RandomAgent 評価スクリプト
 """
 
-import yaml
-import torch
+import argparse
+import csv
 import os
 import pathlib
 import sys
-import argparse
-import csv
-import numpy as np
 from datetime import datetime
 from typing import Dict, List, Tuple
+
 import gymnasium as gym
+import numpy as np
+import torch
+import yaml
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.wrappers.action_masker import ActionMasker
 
@@ -23,8 +24,8 @@ sys.path.insert(0, str(project_root / "src"))
 
 # 自作環境を Gym 登録しておく
 from utttrlsim import env_registration
-from utttrlsim.wrapper.random_opponent_wrapper import OpponentWrapper
 from utttrlsim.agent.random_agent import RandomAgent
+from utttrlsim.wrapper.random_opponent_wrapper import OpponentWrapper
 
 
 def mask_fn(env):

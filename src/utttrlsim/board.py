@@ -15,9 +15,10 @@ Ultimate Tic-Tac-Toe Rules:
 8. If all sub-boards are full or won and no player has won 3 in a row, the game is a draw
 """
 
+import itertools
 from enum import Enum
 from typing import List, Optional, Set, Tuple
-import itertools
+
 import numpy as np
 
 
@@ -199,7 +200,9 @@ class UltimateTicTacToeBoard:
         self._last_move = position
 
         # Switch players
-        self._current_player = Player.O if self._current_player == Player.X else Player.X
+        self._current_player = (
+            Player.O if self._current_player == Player.X else Player.X
+        )
 
     def get_legal_moves(self) -> List[Position]:
         """
@@ -260,7 +263,10 @@ class UltimateTicTacToeBoard:
                         cell = Position(
                             sub_grid_x, sub_grid_y, cell_id % 3, cell_id // 3
                         )
-                        if self._board[cell.board_y, cell.board_x] == Player.EMPTY.value:
+                        if (
+                            self._board[cell.board_y, cell.board_x]
+                            == Player.EMPTY.value
+                        ):
                             legal_moves.add(cell)
 
         return list(legal_moves)

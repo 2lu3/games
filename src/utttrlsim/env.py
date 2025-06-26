@@ -5,11 +5,12 @@ A Gymnasium-compatible environment for Ultimate Tic-Tac-Toe.
 """
 
 from typing import Any, Dict, Optional, Tuple
+
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from .board import Player, UltimateTicTacToeBoard, Position
+from .board import Player, Position, UltimateTicTacToeBoard
 
 
 class UltimateTicTacToeEnv(gym.Env):
@@ -21,7 +22,7 @@ class UltimateTicTacToeEnv(gym.Env):
     - step(action): Take an action and return (observation, reward, done, truncated, info)
     - render(): Render the current state
     - seed(): Set random seed for reproducibility
- 
+
     Player X always trainer, Player O is an opponent (can be random or another agent).
     """
 
@@ -156,7 +157,9 @@ class UltimateTicTacToeEnv(gym.Env):
             "winner": (
                 self.board.winner.value if self.board.winner != Player.EMPTY else None
             ),
-            "last_move": self.board.last_move.board_id if self.board.last_move else None,
+            "last_move": (
+                self.board.last_move.board_id if self.board.last_move else None
+            ),
         }
 
     def _calculate_reward(self, current_player: Player) -> float:
