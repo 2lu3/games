@@ -21,7 +21,7 @@ class UltimateTicTacToeEnv(gym.Env):
     - step(action): Take an action and return (observation, reward, done, truncated, info)
     - render(): Render the current state
     - seed(): Set random seed for reproducibility
-
+ 
     Player X always trainer, Player O is an opponent (can be random or another agent).
     """
 
@@ -83,7 +83,7 @@ class UltimateTicTacToeEnv(gym.Env):
         Take an action in the environment.
 
         Args:
-            action: Action to take (0-80, encoded as sub_board * 9 + position)
+            action: Action to take (0-80)
 
         Returns:
             Tuple of (observation, reward, done, truncated, info)
@@ -151,12 +151,12 @@ class UltimateTicTacToeEnv(gym.Env):
         return {
             "meta_board": self.board.subboard_winner.copy(),
             "current_player": self.board.current_player.value,
-            "legal_moves": self.board.get_legal_moves(),
+            "legal_moves": [move.board_id for move in self.board.get_legal_moves()],
             "game_over": self.board.game_over,
             "winner": (
                 self.board.winner.value if self.board.winner != Player.EMPTY else None
             ),
-            "last_move": self.board.last_move,
+            "last_move": self.board.last_move.board_id if self.board.last_move else None,
         }
 
     def _calculate_reward(self, current_player: Player) -> float:

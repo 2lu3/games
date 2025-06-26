@@ -12,6 +12,7 @@ dependencies = [
     "stable-baselines3>=2.4.1",
     "tensorboard>=2.14.0",
     "sb3-contrib>=2.6.0",
+    "torch>=2.7.1",
 ]
 
 [project.optional-dependencies]

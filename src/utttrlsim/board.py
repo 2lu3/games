@@ -16,7 +16,7 @@ Ultimate Tic-Tac-Toe Rules:
 """
 
 from enum import Enum
-from typing import List, Optional, Set, Tuple, Union
+from typing import List, Optional, Set, Tuple
 import itertools
 import numpy as np
 
@@ -157,22 +157,8 @@ class UltimateTicTacToeBoard:
         self._last_move: Optional[Position] = last_move
 
     @property
-    def board(self) -> Tuple[Tuple[Position, Player], ...]:
-        """
-        Get board state as tuple of (Position, Player) tuples for non-empty cells.
-        
-        Returns:
-            Tuple of (Position, Player) tuples representing occupied cells
-        """
-        occupied_cells = []
-        for y in range(9):
-            for x in range(9):
-                cell_value = self._board[y, x]
-                if cell_value != Player.EMPTY.value:
-                    position = Position(x + y * 9)
-                    player = Player(cell_value)
-                    occupied_cells.append((position, player))
-        return tuple(occupied_cells)
+    def board(self) -> np.ndarray:
+        return self._board.copy()
 
     @property
     def current_player(self) -> Player:
@@ -282,7 +268,7 @@ class UltimateTicTacToeBoard:
     def reset(self, current_player: Player = Player.X) -> None:
         """Reset the board to initial state."""
         self._board.fill(Player.EMPTY.value)
-        self._current_player = Player.X
+        self._current_player = current_player
         self._last_move = None
 
     def render(self) -> str:
@@ -327,7 +313,7 @@ class UltimateTicTacToeBoard:
         new_board = UltimateTicTacToeBoard()
         new_board._board = self._board.copy()
         new_board._current_player = self._current_player
-        new_board._last_move = self._last_move  # Position objects are immutable
+        new_board._last_move = self._last_move.copy() if self._last_move else None
         return new_board
 
     def get_state(self) -> Tuple[np.ndarray, np.ndarray]:

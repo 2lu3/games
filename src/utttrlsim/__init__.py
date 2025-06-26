@@ -9,6 +9,5 @@ __author__ = "Your Name"
 
 from .board import UltimateTicTacToeBoard
 from .env import UltimateTicTacToeEnv
-from .main import main
 
-__all__ = ["UltimateTicTacToeEnv", "UltimateTicTacToeBoard", "main"]
+__all__ = ["UltimateTicTacToeEnv", "UltimateTicTacToeBoard"]

@@ -15,13 +15,15 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from datetime import datetime
 
 # プロジェクトルートをパスに追加
-project_root = pathlib.Path(__file__).parent.parent
-sys.path.insert(0, str(project_root / "src"))
+# project_root = pathlib.Path(__file__).parent.parent
+# sys.path.insert(0, str(project_root / "src"))
 
 # 自作環境を Gym 登録しておく
 from utttrlsim import env_registration
-from utttrlsim.wrapper.random_opponent_wrapper import OpponentWrapper
-from utttrlsim.agent.random_agent import RandomAgent
+from utttrlsim.env import UltimateTicTacToeEnv
+from utttrlsim.policies import random_policy
+from utttrlsim.wrappers import SelfPlayWrapper
+from utttrlsim.board import Player
 
 
 def mask_fn(env):
@@ -42,7 +44,7 @@ def create_opponent_env(env_id: str, opponent_agent):
 
 def main():
     # --- 設定読み込み（プロジェクトルートの YAML を参照） ---
-    config_path = project_root / "config.yaml"
+    config_path =  "config.yaml"
 
     with open(config_path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
@@ -61,14 +63,20 @@ def main():
     os.makedirs(log_dir, exist_ok=True)
     os.makedirs(model_dir, exist_ok=True)
 
-    # --- 環境作成（OpponentWrapper版） ---
-    print(f"Creating OpponentWrapper environment...")
+    # --- 環境作成（SelfPlayWrapper版） ---
+    print(f"Creating SelfPlayWrapper environment...")
 
-    opponent_agent = RandomAgent(seed=random_cfg.get("opponent_seed", 42))
-    base_env = create_opponent_env(cfg["env_id"], opponent_agent)
+    agent_piece = Player.X  # 学習エージェントはX固定
+    base_env = UltimateTicTacToeEnv()
+    wrapped_env = SelfPlayWrapper(
+        base_env,
+        agent_piece=agent_piece,
+        opponent_policy=random_policy,
+        flip_observation=True,
+    )
 
     # ActionMaskerでラップ
-    mask_env = ActionMasker(base_env, mask_fn)
+    mask_env = ActionMasker(wrapped_env, mask_fn)
 
     # デバイス選択 (Apple Silicon対応)
     if torch.cuda.is_available():
@@ -90,7 +98,7 @@ def main():
     ppo_params.update(random_ppo_params)
 
     model = MaskablePPO(
-        "MlpPolicy",
+        "MultiInputPolicy",
         mask_env,
         device=device,
         verbose=1,
@@ -153,7 +161,7 @@ def main():
     print("\n" + "=" * 50)
     print("TRAINING SUMMARY")
     print("=" * 50)
-    print(f"Environment: {cfg['env_id']} with OpponentWrapper")
+    print(f"Environment: {cfg['env_id']} with SelfPlayWrapper")
     print(f"Total steps: {total_steps}")
     print(f"Device: {device}")
     print(f"Opponent seed: {random_cfg.get('opponent_seed', 42)}")
