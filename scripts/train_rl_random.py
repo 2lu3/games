@@ -14,6 +14,7 @@ import yaml
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.wrappers.action_masker import ActionMasker
 from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.vec_env import SubprocVecEnv
 
 # 自作環境を Gym 登録しておく
 from utttrlsim import env_registration
@@ -27,7 +28,6 @@ from utttrlsim.wrappers import SelfPlayWrapper
 # sys.path.insert(0, str(project_root / "src"))
 
 
-
 def mask_fn(env):
     """アクション マスク関数"""
     # get_action_mask を持つ本体を再帰的に探す
@@ -36,6 +36,39 @@ def mask_fn(env):
         if env is None:
             raise AttributeError("get_action_mask を持つ環境が見つかりません")
     return env.get_action_mask()
+
+
+def make_env(env_id: str, agent_piece: Player, opponent_seed: int = None, rank: int = 0):
+    """
+    並列環境用の環境作成関数
+    
+    Args:
+        env_id: 環境ID
+        agent_piece: エージェントの駒（X or O）
+        opponent_seed: 対戦相手の乱数シード
+        rank: 環境のランク（並列環境の識別子）
+    
+    Returns:
+        作成された環境
+    """
+    def _init():
+        # 基本環境を作成
+        base_env = UltimateTicTacToeEnv()
+        
+        # SelfPlayWrapperでラップ
+        wrapped_env = SelfPlayWrapper(
+            base_env,
+            agent_piece=agent_piece,
+            opponent_policy=random_policy,
+            flip_observation=True,
+        )
+        
+        # ActionMaskerでラップ
+        mask_env = ActionMasker(wrapped_env, mask_fn)
+        
+        return mask_env
+    
+    return _init
 
 
 def main():
@@ -48,6 +81,10 @@ def main():
     # Random対戦版の設定を取得
     random_cfg = cfg.get("random_training", {})
 
+    # 並列環境数の取得
+    n_envs = cfg.get("n_envs")  # デフォルトは4
+    print(f"Using {n_envs} parallel environments")
+
     # ログディレクトリの設定
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     # 基本設定からlog_dirを取得
@@ -59,20 +96,17 @@ def main():
     os.makedirs(log_dir, exist_ok=True)
     os.makedirs(model_dir, exist_ok=True)
 
-    # --- 環境作成（SelfPlayWrapper版） ---
-    print(f"Creating SelfPlayWrapper environment...")
+    # --- 並列環境作成 ---
+    print(f"Creating {n_envs} parallel environments...")
 
     agent_piece = Player.X  # 学習エージェントはX固定
-    base_env = UltimateTicTacToeEnv()
-    wrapped_env = SelfPlayWrapper(
-        base_env,
-        agent_piece=agent_piece,
-        opponent_policy=random_policy,
-        flip_observation=True,
-    )
+    opponent_seed = random_cfg.get("opponent_seed", 42)
 
-    # ActionMaskerでラップ
-    mask_env = ActionMasker(wrapped_env, mask_fn)
+    # SubprocVecEnvで並列環境を作成
+    env = SubprocVecEnv([
+        make_env("UTTTRLSim-v0", agent_piece, opponent_seed, i) 
+        for i in range(n_envs)
+    ])
 
     # デバイス選択 (Apple Silicon対応)
     if torch.cuda.is_available():
@@ -95,7 +129,7 @@ def main():
 
     model = MaskablePPO(
         "MultiInputPolicy",
-        mask_env,
+        env,
         device=device,
         verbose=1,
         tensorboard_log=log_dir,
@@ -139,6 +173,7 @@ def main():
                 "training_info": {
                     "timestamp": timestamp,
                     "total_steps": total_steps,
+                    "n_envs": n_envs,
                     "device": device,
                     "model_path": final_model_path,
                 },
@@ -159,8 +194,9 @@ def main():
     print("=" * 50)
     print(f"Environment: {cfg['env_id']} with SelfPlayWrapper")
     print(f"Total steps: {total_steps}")
+    print(f"Parallel environments: {n_envs}")
     print(f"Device: {device}")
-    print(f"Opponent seed: {random_cfg.get('opponent_seed', 42)}")
+    print(f"Opponent seed: {opponent_seed}")
     print(f"Log directory: {log_dir}")
     print(f"Model directory: {model_dir}")
     print("=" * 50)
