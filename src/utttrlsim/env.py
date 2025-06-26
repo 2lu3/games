@@ -193,6 +193,9 @@ class UltimateTicTacToeEnv(gym.Env):
 
         return mask
 
+    def get_action_mask(self):
+        return self._get_action_mask()
+
     def close(self) -> None:
         """Close the environment."""
         pass

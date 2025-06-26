@@ -8,9 +8,6 @@ resolution-markers = [
     "python_full_version < '3.10'",
 ]
 
-[options]
-prerelease-mode = "allow"
-
 [[package]]
 name = "absl-py"
 version = "2.3.0"
@@ -1755,14 +1752,14 @@ wheels = [
 
 [[package]]
 name = "sb3-contrib"
-version = "2.7.0a0"
+version = "2.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "stable-baselines3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6f/10/247c7d273bc19615480bf206fd2c2db66d0b900283e56fb80fe695412de3/sb3_contrib-2.7.0a0.tar.gz", hash = "sha256:6d646195054ed36230fb770e2c7b501958dbc9976b48b6eafefb8f13b052b686", size = 90195, upload_time = "2025-06-16T10:59:41.167Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/53/5acb9ff685a68437329958960886b73425850da02ace63a152781a27ce0d/sb3_contrib-2.6.0.tar.gz", hash = "sha256:eaf7f3268706ee878140decfc743b58e96182e73b5c14872e1c7017ca31e465f", size = 89679, upload_time = "2025-03-24T14:41:47.045Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/c8/2edb838544f6f8552308b7c015520b813fb2867306ee58a346bf4d5c9441/sb3_contrib-2.7.0a0-py3-none-any.whl", hash = "sha256:d2612fecfacd72ef19f69c15b5b3684bd11222df17817995f340590b9a8ebb30", size = 93194, upload_time = "2025-06-16T10:59:39.645Z" },
+    { url = "https://files.pythonhosted.org/packages/35/0b/2aa9be7796c372d17400d55f90f19ddc5b1b242cb996db0bf9ae6ee370e8/sb3_contrib-2.6.0-py3-none-any.whl", hash = "sha256:7440d2a47dcd2996c6f44286a059245f62433d2565951c445673c6a83742ecc2", size = 92768, upload_time = "2025-03-24T14:41:45.346Z" },
 ]
 
 [[package]]
@@ -1794,7 +1791,7 @@ wheels = [
 
 [[package]]
 name = "stable-baselines3"
-version = "2.7.0a0"
+version = "2.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cloudpickle" },
@@ -1807,9 +1804,9 @@ dependencies = [
     { name = "pandas" },
     { name = "torch" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/87/a7/660f404de5eacca31801a9152d09582e1a82380a1dadd380edce9bc4a6e2/stable_baselines3-2.7.0a0.tar.gz", hash = "sha256:e257ae796b0f07354d3f83618324aefbfc5b761fbd48542ec9334a5d487a331f", size = 218824, upload_time = "2025-06-16T10:36:51.44Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/df/25/e71fabe1fdce82118a12bd8a92900d9b5c33d2a7e545ebcf5a582a5d23e9/stable_baselines3-2.6.0.tar.gz", hash = "sha256:972ef537a9a8f2b9de06cdca87ef1f33df5fc8239cfe64fed88976d7c799c2f7", size = 214085, upload_time = "2025-03-24T14:33:14.562Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/a9/659c6d927e922308811feecf0d1b92ceac1bcd66063311d57be542198f31/stable_baselines3-2.7.0a0-py3-none-any.whl", hash = "sha256:0ea45f95e28d5e4e7857bcf1a52cffa519f899f1e3cbee639b0e17a5ce23cea5", size = 187228, upload_time = "2025-06-16T10:36:49.787Z" },
+    { url = "https://files.pythonhosted.org/packages/54/60/6900e8186168e6e23a2125655fb4fe53130256480cc7950dadcee030cd67/stable_baselines3-2.6.0-py3-none-any.whl", hash = "sha256:d4a4c95b5593c6135a5764767d829498677559069110aa3768fe1254f1c457e3", size = 184525, upload_time = "2025-03-24T14:33:12.437Z" },
 ]
 
 [[package]]

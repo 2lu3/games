@@ -36,12 +36,6 @@ def mask_fn(env):
     return env.get_action_mask()
 
 
-def create_opponent_env(env_id: str, opponent_agent):
-    base_env = gym.make(env_id)
-    wrapped_env = OpponentWrapper(base_env, opponent_agent=opponent_agent)
-    return wrapped_env
-
-
 def main():
     # --- 設定読み込み（プロジェクトルートの YAML を参照） ---
     config_path =  "config.yaml"

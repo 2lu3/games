@@ -144,3 +144,6 @@ class SelfPlayWrapper(gym.Wrapper):
 
         return new_obs
 
+    def get_action_mask(self):
+        return self.env.get_action_mask()
+
