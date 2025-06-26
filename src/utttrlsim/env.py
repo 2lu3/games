@@ -167,18 +167,31 @@ class UltimateTicTacToeEnv(gym.Env):
         Calculate reward for the current state.
 
         Returns:
-            Reward value: +1 for win, 0 for draw, -1 for loss
+            Reward value: +1 for win, 0 for draw, -1 for loss, +0.1 for sub-board win
         """
+        reward = 0.0
+        
+        # Check if the last move won a sub-board
+        if self.board.last_move is not None:
+            # Get the sub-board where the last move was made
+            sub_grid_x = self.board.last_move.sub_grid_x
+            sub_grid_y = self.board.last_move.sub_grid_y
+            
+            # Check if this sub-board is now won by the current player
+            if self.board.subboard_winner[sub_grid_y, sub_grid_x] == current_player.value:
+                reward += 0.1
+        
+        # Check for game end conditions
         if not self.board.game_over:
-            return 0.0
+            return reward
 
         if self.board.winner == Player.EMPTY:
             # Draw
-            return 0.0
+            return reward
         elif self.board.winner == current_player:
-            return 1.0
+            return reward + 1.0
         else:
-            return -1.0
+            return reward - 1.0
 
     def _get_action_mask(self) -> np.ndarray:
         """
