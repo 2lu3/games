@@ -13,7 +13,7 @@ import torch
 import yaml
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.wrappers.action_masker import ActionMasker
-from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
 # 自作環境を Gym 登録しておく
@@ -147,6 +147,32 @@ def main():
         name_prefix="uttt_rl_random_model",
     )
 
+    # --- 評価コールバック設定 ---
+    eval_freq = cfg.get("eval_freq")
+    n_eval_episodes = cfg.get("n_eval_episodes", 100)
+
+    # 評価用シングル環境を作成（学習環境と同じラッパー構成）
+    eval_base_env = UltimateTicTacToeEnv()
+    eval_wrapped_env = SelfPlayWrapper(
+        eval_base_env,
+        agent_piece=agent_piece,
+        opponent_policy=random_policy,
+        flip_observation=True,
+    )
+    eval_env = ActionMasker(eval_wrapped_env, mask_fn)
+
+    best_model_dir = os.path.join(model_dir, "best")
+    os.makedirs(best_model_dir, exist_ok=True)
+
+    eval_callback = EvalCallback(
+        eval_env,
+        n_eval_episodes=n_eval_episodes,
+        eval_freq=eval_freq,  # 指定ステップごとに評価
+        best_model_save_path=best_model_dir,
+        deterministic=True,
+        verbose=1,
+    )
+
     # --- 学習実行 ---
     print(f"Starting Random opponent training for {total_steps} steps...")
     print(f"Log directory: {log_dir}")
@@ -155,7 +181,7 @@ def main():
     model.learn(
         total_timesteps=total_steps,
         log_interval=cfg.get("log_interval", 10),
-        callback=checkpoint_callback,
+        callback=[checkpoint_callback, eval_callback],
     )
 
     # --- モデル保存 ---
